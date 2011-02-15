@@ -1,0 +1,7 @@
+Revision history for Perl extension IO::Socket::Socks::Wrapper.
+
+0.02  Mon Feb 15 18:22:17 2011
+      - added support for modules with own connect function, different from IO::Socket::INET::connect;
+
+0.01  Thu Feb 3 11:23:28 2011
+      - original version;

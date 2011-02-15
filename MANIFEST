@@ -1,0 +1,6 @@
+Changes
+Makefile.PL
+MANIFEST
+README
+t/IO-Socket-Socks-Wrapper.t
+lib/IO/Socket/Socks/Wrapper.pm
