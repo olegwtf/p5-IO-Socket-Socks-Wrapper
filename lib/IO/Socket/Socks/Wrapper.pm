@@ -168,7 +168,7 @@ IO::Socket::Socks::Wrapper - Allow any perl package to work through a socks prox
 	# IO::Socket::Socks::Wrapper should have access to @ISA of each package which want to be wrapped
 	# when package == module it can load packages automatically and do its magic with @ISA
 	# but in the case like this loading will fail
-	# so, we will load this modules manually
+	# so, we should load this modules manually
 	use LWP::Protocol::http;
 	use LWP::Protocol::https;
 	use IO::Socket::Socks::Wrapper (
