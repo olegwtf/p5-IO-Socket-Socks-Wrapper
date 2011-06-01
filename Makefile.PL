@@ -6,7 +6,8 @@ WriteMakefile(
     NAME              => 'IO::Socket::Socks::Wrapper',
     LICENSE           => 'perl',
     VERSION_FROM      => 'lib/IO/Socket/Socks/Wrapper.pm',
-    PREREQ_PM         => { IO::Socket::Socks => 0.4 }, # e.g., Module::Name => 1.1
+    PREREQ_PM         => { IO::Socket::Socks => 0.4 }, # e.g., Module::Name => 1.1,
+    META_MERGE        => { resources => {repository => 'https://github.com/olegwtf/p5-IO-Socket-Socks-Wrapper'} },
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM  => 'lib/IO/Socket/Socks/Wrapper.pm', # retrieve abstract from module
        AUTHOR         => 'Oleg G <oleg@cpan.org>') : ()),

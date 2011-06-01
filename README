@@ -1,4 +1,4 @@
-IO::Socket::Socks::Wrapper version 0.03
+IO::Socket::Socks::Wrapper
 ===========================================
 
 IO::Socket::Socks::Wrapper allows to wrap up the network connections into socks proxy.
