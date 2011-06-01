@@ -1,6 +1,8 @@
 package IO::Socket::Socks::Wrapper;
 
 use strict;
+no warnings 'prototype';
+no warnings 'redefine';
 use Socket;
 use base 'Exporter';
 
@@ -33,8 +35,8 @@ sub import
 			if($pkg->isa('IO::Socket::INET')) {
 				# replace IO::Socket::INET::connect
 				# if package inherits from IO::Socket::INET
-				*connect = sub(*$) {
-					local(*IO::Socket::INET::connect) = sub(*$) {
+				*connect = sub {
+					local(*IO::Socket::INET::connect) = sub {
 						_connect(@_, $cfg);
 					};
 					
@@ -55,7 +57,7 @@ sub import
 			}
 			else {
 				# replace package version of connect
-				*connect = sub(*$) {
+				*connect = sub {
 					_connect(@_, $cfg);
 				}
 			}
