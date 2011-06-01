@@ -6,6 +6,7 @@ require 't/subs.pm';
 use strict;
 
 SKIP: {
+	skip "fork, windows, sux" if $^O =~ /MSWin/i;
 	eval { require Net::HTTP; require Net::FTP }
 		or skip "No Net::HTTP or Net::FTP";
 		
@@ -45,6 +46,7 @@ SKIP: {
 };
 
 SKIP: {
+	skip "fork, windows, sux" if $^O =~ /MSWin/i;
 	eval { require LWP::UserAgent; require LWP::Protocol::http; require Net::HTTP }
 		or skip "No LWP found";
 		

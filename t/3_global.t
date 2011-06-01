@@ -1,23 +1,25 @@
 #!/usr/bin/env perl
 
 BEGIN {
-	pipe(READER, WRITER);
-	my $child = fork();
-	die 'fork: ', $! unless defined $child;
-	
-	if ($child == 0) {
+	if ($^O !~ /MSWin/i) {
+		pipe(READER, WRITER);
+		my $child = fork();
+		die 'fork: ', $! unless defined $child;
+		
+		if ($child == 0) {
+			close READER;
+			require 't/subs.pm';
+			
+			print WRITER join(',', make_socks_server(5)), "\n";
+			
+			exit;
+		}
+		
+		close WRITER;
+		chomp(my $info = <READER>);
 		close READER;
-		require 't/subs.pm';
-		
-		print WRITER join(',', make_socks_server(5)), "\n";
-		
-		exit;
+		($s_pid, $s_host, $s_port) = split /,/, $info;
 	}
-	
-	close WRITER;
-	chomp(my $info = <READER>);
-	close READER;
-	($s_pid, $s_host, $s_port) = split /,/, $info;
 }
 
 use IO::Socket::Socks::Wrapper {
@@ -28,6 +30,7 @@ use Test::More;
 require 't/subs.pm';
 
 SKIP: {
+	skip "fork, windows, sux" if $^O =~ /MSWin/i;
 	eval { require LWP; require Net::FTP }
 		or skip "No LWP or Net::FTP found";
 		
@@ -46,6 +49,7 @@ SKIP: {
 	}
 	
 	kill 15, $s_pid;
+	$s_pid = undef;
 	
 	$page = $ua->get("http://$h_host:$h_port/")->content;
 	isnt($page, 'ROOT', 'LWP+Global socks5 -Server');
@@ -64,6 +68,6 @@ SKIP: {
 	kill 15, $f_pid;
 };
 
-kill 15, $s_pid;
+kill 15, $s_pid if $s_pid;
 
 done_testing();
