@@ -1,9 +1,10 @@
-MANIFEST
-lib/IO/Socket/Socks/Wrapper.pm
-t/subs.pm
-t/1_in_pkg.t
-t/3_global.t
-t/2_in_pkg_no_global.t
 Makefile.PL
-README
 Changes
+lib/IO/Socket/Socks/Wrapper.pm
+README
+t/1_in_pkg.t
+t/subs.pm
+t/2_in_pkg_no_global.t
+t/3_global.t
+t/4_live.t
+MANIFEST

@@ -9,6 +9,8 @@ use base 'Exporter';
 our $VERSION = 0.04;
 our @EXPORT_OK = 'connect';
 
+# cache
+# pkg -> ref to pkg::connect || undef(if pkg has no connect)
 my %PKGS;
 
 sub import
