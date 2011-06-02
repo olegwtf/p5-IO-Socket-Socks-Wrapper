@@ -1,5 +1,13 @@
 Revision history for Perl extension IO::Socket::Socks::Wrapper.
 
+0.04  Fri Jun  3 00:38:32 2011
+      - alot of tests added
+      - suppress warnings about prototype mismatch
+      - override IO::Socket::connect instead of IO::Socket::INET::connect if package inherits from IO::Socket,
+        makes available to wrap IO::Socket::INET package
+      - call package version of the connect if it has own, makes available to wrap packages like
+        IO::Socket::SSL
+
 0.03  Mon Apr 18 23:32:42 2011
       - added support for packages (even if package name != module name)
 
