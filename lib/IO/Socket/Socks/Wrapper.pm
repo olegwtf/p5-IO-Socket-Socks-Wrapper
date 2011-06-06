@@ -25,7 +25,14 @@ sub import
 		
 		if($pkg) {
 			no strict 'refs';
-			# override connect() in the package
+			
+			my $sub;
+			if ($pkg =~ /^(.+)::([^:]+)\(\)$/) {
+				$pkg = $1;
+				$sub = $2;
+			}
+			
+			# override in the package
 			
 			# do not load module with package if package already available
 			# some packages haven't separate modules
@@ -36,7 +43,20 @@ sub import
 					or die $@;
 			}
 			
-			if($pkg->isa('IO::Socket')) {
+			if ($sub) {
+			# localize IO::Socket::connect overriding
+			# in the sub where IO::Socket::connect called
+				my $symbol = $pkg.'::'.$sub;
+				my $pkg_sub = \&$symbol;
+				*$symbol = sub {
+					local *IO::Socket::connect = sub {
+						_connect(@_, $cfg);
+					};
+					
+					$pkg_sub->(@_);
+				}
+			}
+			elsif($pkg->isa('IO::Socket')) {
 			# replace IO::Socket::connect
 			# if package inherits from IO::Socket
 				# save replaceable package version of the connect
