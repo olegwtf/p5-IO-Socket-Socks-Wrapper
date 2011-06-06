@@ -54,7 +54,8 @@ sub import
 					};
 					
 					$pkg_sub->(@_);
-				}
+				};
+				next;
 			}
 			elsif($pkg->isa('IO::Socket')) {
 			# replace IO::Socket::connect
