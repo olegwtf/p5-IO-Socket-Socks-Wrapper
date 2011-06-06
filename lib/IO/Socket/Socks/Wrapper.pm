@@ -10,7 +10,7 @@ our $VERSION = 0.04;
 our @EXPORT_OK = 'connect';
 
 # cache
-# pkg -> ref to pkg::connect || undef(if pkg has no connect)
+# pkg -> ref to pkg::sub || undef(if pkg has no connect)
 my %PKGS;
 
 sub import
@@ -47,7 +47,9 @@ sub import
 			# localize IO::Socket::connect overriding
 			# in the sub where IO::Socket::connect called
 				my $symbol = $pkg.'::'.$sub;
-				my $pkg_sub = \&$symbol;
+				my $pkg_sub = exists $PKGS{$symbol} ?
+				                     $PKGS{$symbol} :
+				                     ($PKGS{$symbol} = \&$symbol);
 				*$symbol = sub {
 					local *IO::Socket::connect = sub {
 						_connect(@_, $cfg);
