@@ -1,5 +1,12 @@
 Revision history for Perl extension IO::Socket::Socks::Wrapper.
 
+0.05  Tue Jun  7 17:49:20 2011
+      - tests fixes: OpenBSD doesn't know how to connect to 0.0.0.0
+      - new syntax to override IO::Socket::connect in the specified
+        package subroutine added
+      - tests for new syntax added
+      - documentation improvements
+
 0.04  Fri Jun  3 00:38:32 2011
       - alot of tests added
       - suppress warnings about prototype mismatch
