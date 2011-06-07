@@ -242,7 +242,7 @@ IO::Socket::Socks::Wrapper - Allow any perl package to work through a socks prox
 	# the way to wrap package that is not inherited from IO::Socket
 	# but uses IO::Socket object as internal socket handle
 	
-	use HTTP::Tiny; # HTTP::Tiny::Handle is in HTTP::Tiny module
+	use HTTP::Tiny; # HTTP::Tiny::Handle package is in HTTP::Tiny module
 	use IO::Socket::Socks::Wrapper (
 		# HTTP::Tiny::Handle::connect sub invokes IO::Socket::INET->new
 		# see HTTP::Tiny sourse code
@@ -290,19 +290,23 @@ be scalar with false value.
 
 =item Wrapping package that inherits from IO::Socket or uses builtin connect()
 
+Examples are: Net::FTP, Net::POP3, Net::HTTP
+
 	'pkg' => $hashref
 
-Where pkg is a package that is responsible for connections. For example if you want to wrap LWP http connections, then module
+Where pkg is a package name that is responsible for connections. For example if you want to wrap LWP http connections, then module
 name should be Net::HTTP, for https connections it should be Net::HTTPS or even LWP::Protocol::http::Socket and
 LWP::Protocol::https::Socket respectively (see examples above). You really need to look at the source code of the package
-which you want to wrap to determine the name for wrapping or use global wrapping which will wrap all that can. Use `SocksDebug' to
+which you want to wrap to determine the name for wrapping. Or use global wrapping which will wrap all that can. Use `SocksDebug' to
 verify that wrapping works good. For $hashref description see above.
 
 =item Wrapping package that uses IO::Socket object or class object inherited from IO::Socket as internal socket handle
 
+Examples are: HTTP::Tiny (HTTP::Tiny::Handle::connect)
+
 	'pkg::sub()' => $hashref
 
-Where sub is a name of soubroutine contains IO::Socket object creation/connection.
+Where sub is a name of subroutine contains IO::Socket object creation/connection.
 Parentheses required. For pkg and $hashref description see above.
 
 =back
