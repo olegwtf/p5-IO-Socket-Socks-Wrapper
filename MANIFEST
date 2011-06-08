@@ -2,7 +2,6 @@ Makefile.PL
 Changes
 lib/IO/Socket/Socks/Wrapper.pm
 README
-Makefile.old
 t/1_in_pkg.t
 t/5_live.t
 t/subs.pm
