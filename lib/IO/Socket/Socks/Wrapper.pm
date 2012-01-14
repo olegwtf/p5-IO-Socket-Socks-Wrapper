@@ -131,6 +131,10 @@ sub _connect
 	# global overriding will not work with `use'
 	require IO::Socket::Socks;
 	
+	unless (exists $cfg->{Timeout}) {
+		$cfg->{Timeout} = 180;
+	}
+	
 	IO::Socket::Socks->new_from_socket(
 		$socket,
 		ConnectAddr  => $host,
@@ -159,13 +163,15 @@ IO::Socket::Socks::Wrapper - Allow any perl package to work through a socks prox
 		Net::FTP => { # also specify `Net::FTP::dataconn' to wrap data connection
 			ProxyAddr => '10.0.0.1',
 			ProxyPort => 1080,
-			SocksDebug => 1
+			SocksDebug => 1,
+			Timeout => 15
 		},
 		Net::HTTP => {
 			ProxyAddr => '10.0.0.2',
 			ProxyPort => 1080,
 			SocksVersion => 4,
-			SocksDebug => 1
+			SocksDebug => 1,
+			Timeout => 15
 		}
 	);
 	use Net::FTP;
@@ -219,12 +225,14 @@ IO::Socket::Socks::Wrapper - Allow any perl package to work through a socks prox
 		LWP::Protocol::http::Socket => {
 			ProxyAddr => 'localhost',
 			ProxyPort => 1080,
-			SocksDebug => 1
+			SocksDebug => 1,
+			Timeout => 15
 		},
 		LWP::Protocol::https::Socket => {
 			ProxyAddr => 'localhost',
 			ProxyPort => 1080,
-			SocksDebug => 1
+			SocksDebug => 1,
+			Timeout => 15
 		}
 	);
 	use LWP;
@@ -249,7 +257,8 @@ IO::Socket::Socks::Wrapper - Allow any perl package to work through a socks prox
 		'HTTP::Tiny::Handle::connect()' => { # parentheses required
 			ProxyAddr => 'localhost',
 			ProxyPort => 1080,
-			SocksVersion => 4
+			SocksVersion => 4,
+			Timeout => 15
 		}
 	);
 	
@@ -310,6 +319,11 @@ Where sub is a name of subroutine contains IO::Socket object creation/connection
 Parentheses required. For pkg and $hashref description see above.
 
 =back
+
+=head1 NOTICE
+
+Default timeout for wrapped connect is 180 sec. You can specify your own value using C<Timeout> option. Set it to zero if you don't want
+to limit connection attempt time.
 
 =head1 BUGS
 
