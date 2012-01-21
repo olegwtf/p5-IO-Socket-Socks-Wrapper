@@ -1,5 +1,9 @@
 Revision history for Perl extension IO::Socket::Socks::Wrapper.
 
+0.06  Sat Jan 21 23:15:37 2012
+      - Set default connect timeout to 180 sec
+      - Bump I::S::S dep to 0.61 for more correct errors handling
+
 0.05  Tue Jun  7 17:49:20 2011
       - tests fixes: OpenBSD doesn't know how to connect to 0.0.0.0
       - new syntax to override IO::Socket::connect in the specified
