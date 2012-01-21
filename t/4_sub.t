@@ -5,6 +5,8 @@ use IO::Socket::Socks::Wrapper;
 require 't/subs.pm';
 use strict;
 
+$^W = 0;
+
 SKIP: {
 	skip "fork, windows, sux" if $^O =~ /MSWin/i;
 	eval { require HTTP::Tiny  }

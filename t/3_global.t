@@ -29,6 +29,8 @@ use IO::Socket::Socks::Wrapper {
 use Test::More;
 require 't/subs.pm';
 
+$^W = 0;
+
 SKIP: {
 	skip "fork, windows, sux" if $^O =~ /MSWin/i;
 	eval { require LWP; require Net::FTP }

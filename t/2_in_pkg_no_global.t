@@ -5,6 +5,8 @@ use IO::Socket::Socks::Wrapper;
 require 't/subs.pm';
 use strict;
 
+$^W = 0;
+
 SKIP: {
 	skip "fork, windows, sux" if $^O =~ /MSWin/i;
 	eval { require Net::HTTP; require Net::FTP }
@@ -54,7 +56,7 @@ SKIP: {
 	my ($h_pid, $h_host, $h_port) = make_http_server();
 	
 	IO::Socket::Socks::Wrapper->import(
-		LWP::Protocol::http::Socket:: => {
+		'LWP::Protocol::http::Socket' => {
 			ProxyAddr => $s_host,
 			ProxyPort => $s_port,
 			SocksVersion => 5
