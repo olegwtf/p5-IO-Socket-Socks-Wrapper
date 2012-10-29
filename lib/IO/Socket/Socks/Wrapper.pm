@@ -144,6 +144,7 @@ sub _connect
 	
 	bless $socket, $ref
 		if $ref && $ref ne 'GLOB';
+	1;
 }
 
 1;
