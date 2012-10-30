@@ -133,7 +133,7 @@ sub _connect
 	
 	return CORE::connect( $socket, $name )
 		if (($ref && $socket->isa('IO::Socket::Socks')) || !$cfg);
-		
+	
 	my ($port, $host) = sockaddr_in($name);
 	$host = inet_ntoa($host);
 	
@@ -151,9 +151,7 @@ sub _connect
 		%$cfg
 	) or return;
 	
-	bless $socket, $ref
-		if $ref && $ref ne 'GLOB';
-	
+	bless $socket, $ref if $ref; # XXX: should we unbless for GLOB?
 	1;
 }
 
