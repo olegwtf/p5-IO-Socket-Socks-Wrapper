@@ -109,7 +109,16 @@ sub import
 		else {
 			# override connect() globally
 			*connect = sub(*$) {
-				_connect(@_, $cfg);
+				my $socket = shift;
+				unless (ref $socket) {
+					# old-style bareword used
+					no strict 'refs';
+					my $caller = caller;
+					$socket = $caller . '::' . $socket;
+					$socket = \*{$socket};
+				}
+				
+				_connect($socket, @_, $cfg);
 			};
 			
 			$mypkg->export('CORE::GLOBAL', 'connect');
@@ -144,6 +153,7 @@ sub _connect
 	
 	bless $socket, $ref
 		if $ref && $ref ne 'GLOB';
+	
 	1;
 }
 

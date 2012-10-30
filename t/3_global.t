@@ -26,6 +26,7 @@ use IO::Socket::Socks::Wrapper {
 	ProxyAddr => $s_host,
 	ProxyPort => $s_port
 };
+use Socket;
 use Test::More;
 require 't/subs.pm';
 
@@ -43,6 +44,14 @@ SKIP: {
 	my $page = $ua->get("http://$h_host:$h_port/")->content;
 	is($page, 'ROOT', 'LWP+Global socks5');
 	
+	socket(SOCK, PF_INET, SOCK_STREAM, getprotobyname('tcp'));
+	ok(connect(SOCK, sockaddr_in($h_port, inet_aton($h_host))), 'Bareword connect');
+	close SOCK;
+	
+	socket(my $sock, PF_INET, SOCK_STREAM, getprotobyname('tcp'));
+	ok(connect($sock, sockaddr_in($h_port, inet_aton($h_host))), 'GLOB connect');
+	close $sock;
+	
 	my $ftp = Net::FTP->new($f_host, Port => $f_port)
 		or warn $@;
 	if ($ftp) {
@@ -52,6 +61,14 @@ SKIP: {
 	
 	kill 15, $s_pid;
 	$s_pid = undef;
+	
+	socket(NEW_SOCK, PF_INET, SOCK_STREAM, getprotobyname('tcp'));
+	ok(!connect(NEW_SOCK, sockaddr_in($h_port, inet_aton($h_host))), 'Bareword connect -Server');
+	close NEW_SOCK;
+	
+	socket(my $new_sock, PF_INET, SOCK_STREAM, getprotobyname('tcp'));
+	ok(!connect($new_sock, sockaddr_in($h_port, inet_aton($h_host))), 'GLOB connect -Server');
+	close $new_sock;
 	
 	$page = $ua->get("http://$h_host:$h_port/")->content;
 	isnt($page, 'ROOT', 'LWP+Global socks5 -Server');
