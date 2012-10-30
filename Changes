@@ -1,5 +1,11 @@
 Revision history for Perl extension IO::Socket::Socks::Wrapper.
 
+0.07  Tue Oct 30 19:14:01 2012
+      - Fix for barewords syntax: connect(SOCK, $addr)
+      - Rebless socket to GLOB after IO::Socket::Socks->new_from_socket
+        if it was GLOB before, this may works for packages which checks
+        that ref($socket) eq 'GLOB'
+
 0.06  Sat Jan 21 23:15:37 2012
       - Set default connect timeout to 180 sec
       - Bump I::S::S dep to 0.61 for more correct errors handling
