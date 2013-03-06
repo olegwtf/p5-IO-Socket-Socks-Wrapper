@@ -7,7 +7,7 @@ use Socket;
 use base 'Exporter';
 
 our $VERSION = 0.07;
-our @EXPORT_OK = 'connect';
+our @EXPORT_OK = ('connect', 'wrap_connection');
 
 # cache
 # pkg -> ref to pkg::sub || undef(if pkg has no connect)
@@ -124,6 +124,11 @@ sub import
 			$mypkg->export('CORE::GLOBAL', 'connect');
 		}
 	}
+}
+
+sub wrap_connection {
+	require IO::Socket::Socks::Wrapped;
+	return  IO::Socket::Socks::Wrapped->new(@_);
 }
 
 sub _connect
