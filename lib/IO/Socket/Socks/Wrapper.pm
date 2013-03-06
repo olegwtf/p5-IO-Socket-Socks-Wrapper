@@ -7,7 +7,7 @@ use Socket;
 use base 'Exporter';
 
 our $VERSION = 0.07;
-our @EXPORT_OK = ('connect', 'wrap_connection');
+our @EXPORT_OK = 'connect';
 
 # cache
 # pkg -> ref to pkg::sub || undef(if pkg has no connect)
