@@ -42,6 +42,7 @@ SKIP: {
 		$http->read_entity_body($page, 1024);
 	};
 	
+	skip "You are behind squid" if $page =~ /squid/i;
 	is($page, 'UNKNOWN', 'Direct http connection');
 	kill 15, $h_pid;
 	kill 15, $f_pid;
@@ -65,6 +66,7 @@ SKIP: {
 	
 	my $ua = LWP::UserAgent->new();
 	my $page = $ua->get("http://$h_host:$h_port/")->content;
+	skip "You are behind squid" if $page =~ /squid/i;
 	is($page, 'ROOT', 'LWP+Socks5+Server');
 	
 	kill 15, $s_pid;

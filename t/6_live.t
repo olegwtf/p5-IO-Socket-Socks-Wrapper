@@ -32,7 +32,8 @@ SKIP: {
 	
 	kill 15, $s_pid;
 	$page = $ua->get('https://encrypted.google.com')->content;
-	ok((() = $page =~ /google/g) < 2, 'IO::Socket::SSL socks5 wrapping -Server') or diag $page;
+	ok((() = $page =~ /google/g) < 2, 'IO::Socket::SSL socks5 wrapping -Server') or 
+		diag "Net::HTTPS version=$Net::HTTPS::VERSION, SSL_SOCKET_CLASS=$Net::HTTPS::SSL_SOCKET_CLASS, page=", $page;
 };
 
 SKIP: {

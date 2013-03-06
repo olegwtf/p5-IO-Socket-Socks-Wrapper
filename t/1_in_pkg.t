@@ -25,6 +25,7 @@ SKIP: {
 	
 	my $ua = LWP::UserAgent->new();
 	my $page = $ua->get("http://$h_host:$h_port/")->content;
+	skip "You are behind squid" if $page =~ /squid/i;
 	is($page, 'ROOT', 'LWP+Socks4+Server');
 	
 	kill 15, $s_pid;
@@ -56,6 +57,7 @@ SKIP: {
 		$http->read_response_headers();
 		$http->read_entity_body($page, 1024);
 	};
+	skip "You are behind squid" if $page =~ /squid/i;
 	is($page, 'INDEX', 'HTTP+Socks5+Server');
 	
 	kill 15, $s_pid;
@@ -97,7 +99,9 @@ SKIP: {
 	ok(eval{Net::FTP->new($f_host, Port => $f_port)->login('root', 'toor')}, 'FTP over socks4');
 	kill 15, $s4_pid;
 	
-	is(LWP::UserAgent->new->get("http://$h_host:$h_port/index")->content, 'INDEX', 'LWP over socks5');
+	my $page = LWP::UserAgent->new->get("http://$h_host:$h_port/index")->content;
+	skip "You are behind squid" if $page =~ /squid/i;
+	is($page, 'INDEX', 'LWP over socks5');
 	kill 15, $s5_pid;
 	
 	kill 15, $h_pid;
