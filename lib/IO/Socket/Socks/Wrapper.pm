@@ -6,7 +6,7 @@ no warnings 'redefine';
 use Socket;
 use base 'Exporter';
 
-our $VERSION = '0.08_1';
+our $VERSION = '0.08_2';
 our @EXPORT_OK = 'connect';
 
 # cache

@@ -11,10 +11,14 @@ sub make_socks_server($) {
 	die 'fork: ', $! unless defined $child;
 	
 	if ($child == 0) {
+		my $connections_processed = 0;
+		local $SIG{TERM} = sub { exit $connections_processed };
+		
 		while (1) {
 			my $client = $serv->accept()
 				or next;
 			
+			$connections_processed++;
 			my ($cmd, $host, $port) = @{$client->command()};
 			
 			if($cmd == CMD_CONNECT)

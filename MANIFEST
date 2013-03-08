@@ -8,7 +8,6 @@ t/1_in_pkg.t
 t/2_in_pkg_no_global.t
 t/3_global.t
 t/4_sub.t
-t/5_live.t
 t/5_obj.t
 t/6_live.t
 t/subs.pm
