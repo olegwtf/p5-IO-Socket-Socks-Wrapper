@@ -11,7 +11,8 @@ SKIP: {
 	skip "fork, windows, sux" if $^O =~ /MSWin/i;
 	eval { require IO::Socket::SSL; require LWP;  }
 		or skip "No LWP or IO::Socket::SSL found";
-		
+	
+	IO::Socket::SSL->import('inet4');
 	my $ua = LWP::UserAgent->new(timeout => 10);
 	my $page = $ua->get('https://encrypted.google.com')->content;
 	skip "Seems there is no internet connection on this machine"
