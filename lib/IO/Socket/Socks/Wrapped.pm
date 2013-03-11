@@ -8,7 +8,7 @@ use constant {
 	CFG => 1,
 };
 
-our $VERSION = '0.08_3';
+our $VERSION = '0.08_4';
 our $AUTOLOAD;
 
 sub new {
