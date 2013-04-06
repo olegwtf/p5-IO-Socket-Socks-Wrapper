@@ -6,8 +6,8 @@ no warnings 'redefine';
 use Socket;
 use base 'Exporter';
 
-our $VERSION = '0.08_4';
-our @EXPORT_OK = 'connect';
+our $VERSION = '0.08';
+our @EXPORT_OK = ('connect', 'wrap_connection');
 
 # cache
 # pkg -> ref to pkg::sub || undef(if pkg has no connect)
@@ -16,6 +16,10 @@ my %PKGS;
 sub import
 {
 	my $mypkg = shift;
+	
+	if (@_ == 1 && !ref($_[0]) && $_[0] eq 'wrap_connection') {
+		return __PACKAGE__->export_to_level(1, $mypkg, 'wrap_connection');
+	}
 	
 	while(my ($pkg, $cfg) = splice @_, 0, 2) {
 		unless(defined $cfg) {
@@ -172,6 +176,23 @@ IO::Socket::Socks::Wrapper - Allow any perl package to work through a socks prox
 
 =over
 
+	# wrap all connections
+	use IO::Socket::Socks::Wrapper ( # should be before any other `use'
+		{
+			ProxyAddr => 'localhost',
+			ProxyPort => 1080,
+			SocksDebug => 1,
+			Timeout => 10
+		}
+	);
+	
+	# except Net::FTP
+	IO::Socket::Socks::Wrapper->import(Net::FTP:: => 0); # direct network access
+
+=back
+
+=over
+
 	# wrap Net::FTP and Net::HTTP only
 	use IO::Socket::Socks::Wrapper (
 		Net::FTP => { # also specify `Net::FTP::dataconn' to wrap data connection
@@ -201,23 +222,6 @@ IO::Socket::Socks::Wrapper - Allow any perl package to work through a socks prox
 	
 	# change proxy for Net::FTP
 	IO::Socket::Socks::Wrapper->import(Net::FTP:: => {ProxyAddr => '10.0.0.3', ProxyPort => 1080});
-
-=back
-
-=over
-
-	# wrap all connections
-	use IO::Socket::Socks::Wrapper ( # should be before any other `use'
-		{
-			ProxyAddr => 'localhost',
-			ProxyPort => 1080,
-			SocksDebug => 1,
-			Timeout => 10
-		}
-	);
-	
-	# except Net::FTP
-	IO::Socket::Socks::Wrapper->import(Net::FTP:: => 0); # direct network access
 
 =back
 
@@ -286,18 +290,37 @@ IO::Socket::Socks::Wrapper - Allow any perl package to work through a socks prox
 
 =back
 
+=over
+
+	# we can wrap connection for separate object
+	# if package internally uses IO::Socket for connections (for most this is true)
+	
+	use v5.10;
+	use IO::Socket::Socks::Wrapper 'wrap_connection';
+	use Mojo::UserAgent;
+
+	my $ua = wrap_connection(Mojo::UserAgent->new, {
+		ProxyAddr => 'localhost',
+		ProxyPort => 1080,
+		SocksDebug => 1
+	});
+
+	# $ua now uses socks5 proxy for connections
+	say $ua->get('http://www.google.com')->success->code;
+
+=back
+
 =head1 DESCRIPTION
 
-C<IO::Socket::Socks::Wrapper> allows to wrap up the network connections into socks proxy. It can wrap up connection
-from separate packages or any network connection. It works by overriding builtin connect() function in the package
-or globally, or by overriding IO::Socket::connect() function in the package.
+C<IO::Socket::Socks::Wrapper> allows to wrap up the network connections into socks proxy. It can wrap up any network connection,
+connection from separate packages or even connection from separate object.
 
 =head1 METHODS
 
 =head2 import( CFG )
 
 import() is invoked when C<IO::Socket::Socks::Wrapper> loaded by `use' command. Later it can be invoked manually
-to change proxy in some package. Global overriding will not work in the packages that was loaded before calling 
+to change proxy. Global overriding will not work in the packages that was loaded before calling 
 IO::Socket::Socks::Wrapper->import(). So, for this purposes `use IO::Socket::Socks::Wrapper' with $hashref argument
 should be before any other `use' statements.
 
@@ -311,7 +334,7 @@ Only $hashref should be specified. $hashref is a reference to a hash with key/va
 constructor options, but without (Connect|Bind|Udp)Addr and (Connect|Bind|Udp)Port. To disable wrapping $hashref could
 be scalar with false value.
 
-=item Wrapping package that inherits from IO::Socket or uses builtin connect()
+=item Wrapping package that inherits from IO::Socket
 
 Examples are: Net::FTP, Net::POP3, Net::HTTP
 
@@ -321,7 +344,7 @@ Where pkg is a package name that is responsible for connections. For example if 
 name should be Net::HTTP, for https connections it should be Net::HTTPS or even LWP::Protocol::http::Socket and
 LWP::Protocol::https::Socket respectively (see examples above). You really need to look at the source code of the package
 which you want to wrap to determine the name for wrapping. Or use global wrapping which will wrap all that can. Use `SocksDebug' to
-verify that wrapping works good. For $hashref description see above.
+verify that wrapping works. For $hashref description see above.
 
 =item Wrapping package that uses IO::Socket object or class object inherited from IO::Socket as internal socket handle
 
@@ -331,6 +354,14 @@ Examples are: HTTP::Tiny (HTTP::Tiny::Handle::connect)
 
 Where sub is a name of subroutine contains IO::Socket object creation/connection.
 Parentheses required. For pkg and $hashref description see above.
+
+=item Wrapping objects
+
+To wrap object connection you should use wrap_connection($obj, $hashref) subroutine, which may be imported manually. $obj may be any object
+that uses IO::Socket for tcp connections creation. This subroutine will return new object which you should use. Returned object
+is object of IO::Socket::Socks::Wrapped class and it has all methods that original object has. You can also use original object as before,
+but it will create direct connections without proxy. For more details see L<IO::Socket::Socks::Wrapped> documentation. For $hashref
+description see above.
 
 =back
 
@@ -345,7 +376,7 @@ Wrapping doesn't work with impure perl packages. WWW::Curl for example.
 
 =head1 SEE ALSO
 
-L<IO::Socket::Socks>
+L<IO::Socket::Socks>, L<IO::Socket::Socks::Wrapped>
 
 =head1 COPYRIGHT
 

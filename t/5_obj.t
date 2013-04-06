@@ -21,7 +21,7 @@ SKIP: {
 		SocksVersion => 4,
 	});
 	
-	isa_ok($ua4, 'IO::Socket::Socks::Wrapped');
+	isa_ok($ua4, 'LWP::UserAgent');
 	
 	my $ua5 = IO::Socket::Socks::Wrapper::wrap_connection(LWP::UserAgent->new(timeout => 10), {
 		ProxyAddr    => $s_host5,
@@ -29,7 +29,7 @@ SKIP: {
 		SocksVersion => 5,
 	});
 	
-	isa_ok($ua5, 'IO::Socket::Socks::Wrapped');
+	isa_ok($ua5, 'LWP::UserAgent');
 	
 	my ($h_pid, $h_host, $h_port) = make_http_server();
 	
@@ -60,7 +60,7 @@ SKIP: {
 		SocksVersion => 4,
 	});
 	
-	isa_ok($ua4, 'IO::Socket::Socks::Wrapped');
+	isa_ok($ua4, 'HTTP::Tiny');
 	
 	my $ua5 = IO::Socket::Socks::Wrapper::wrap_connection(HTTP::Tiny->new(timeout => 10), {
 		ProxyAddr    => $s_host5,
@@ -68,7 +68,7 @@ SKIP: {
 		SocksVersion => 5,
 	});
 	
-	isa_ok($ua5, 'IO::Socket::Socks::Wrapped');
+	isa_ok($ua5, 'HTTP::Tiny');
 	
 	my ($h_pid, $h_host, $h_port) = make_http_server();
 	
