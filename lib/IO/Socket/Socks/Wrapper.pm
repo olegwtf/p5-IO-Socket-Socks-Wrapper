@@ -56,7 +56,7 @@ sub import
 				                     ($PKGS{$symbol} = \&$symbol);
 				*$symbol = sub {
 					local *IO::Socket::connect = sub {
-						_connect(@_, $cfg);
+						_connect(@_, $cfg, 1);
 					};
 					
 					$pkg_sub->(@_);
@@ -76,7 +76,7 @@ sub import
 				
 				*connect = sub {
 					local(*IO::Socket::connect) = sub {
-						_connect(@_, $cfg);
+						_connect(@_, $cfg, 1);
 					};
 					
 					my $self = shift;
@@ -93,9 +93,9 @@ sub import
 						foreach my $parent (@{$pkg.'::ISA'}) {
 							if($parent->isa('IO::Socket')) {
 								bless $self, $parent;
-								$self->connect(@_);
+								my $connected = $self->connect(@_);
 								bless $self, $ref;
-								return $self;
+								return $connected ? $self : undef;
 							}
 						}
 					}
@@ -137,11 +137,47 @@ sub wrap_connection {
 
 sub _connect
 {
-	my ($socket, $name, $cfg) = @_;
+	my ($socket, $name, $cfg, $io_socket) = @_;
 	my $ref = ref($socket);
 	
-	return CORE::connect( $socket, $name )
-		if (($ref && $socket->isa('IO::Socket::Socks')) || !$cfg);
+	if (($ref && $socket->isa('IO::Socket::Socks')) || !$cfg) {
+		my $timeout;
+		unless ($io_socket and $timeout = ${*$socket}{'io_socket_timeout'}) {
+			return CORE::connect( $socket, $name );
+		}
+		
+		my $blocking = $socket->blocking(0);
+		my $err;
+		
+		if (!CORE::connect( $socket, $name )) {
+			# this was ported from IO::Socket::connect();
+			if (($!{EINPROGRESS} || $!{EWOULDBLOCK})) {
+				require IO::Select;
+				my $sel = IO::Select->new($socket);
+				
+				undef $!;
+				if (!$sel->can_write($timeout)) {
+					$! = exists &Errno::ETIMEDOUT ? &Errno::ETIMEDOUT : 1 unless $!;
+					$err = $!;
+				}
+				elsif (!CORE::connect( $socket, $name ) &&
+						not ($!{EISCONN} || ($! == 10022 && $^O eq 'MSWin32'))) {
+					# Some systems refuse to re-connect() to
+					# an already open socket and set errno to EISCONN.
+					# Windows sets errno to WSAEINVAL (10022)
+					$err = $!;
+				}
+			}
+			else {
+				$err = $!;
+			}
+		}
+		
+		$socket->blocking(1) if $blocking;
+		$! = $err if $err;
+		
+		return $err ? undef : $socket;
+	}
 	
 	my ($port, $host) = sockaddr_in($name);
 	$host = inet_ntoa($host);
@@ -150,7 +186,7 @@ sub _connect
 	require IO::Socket::Socks;
 	
 	unless (exists $cfg->{Timeout}) {
-		$cfg->{Timeout} = 180;
+		$cfg->{Timeout} = $ref && $socket->isa('IO::Socket') && ${*$socket}{'io_socket_timeout'} || 180;
 	}
 	
 	IO::Socket::Socks->new_from_socket(
@@ -161,7 +197,8 @@ sub _connect
 	) or return;
 	
 	bless $socket, $ref if $ref; # XXX: should we unbless for GLOB?
-	1;
+	
+	return $socket;
 }
 
 1;
