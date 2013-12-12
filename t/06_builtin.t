@@ -1,9 +1,13 @@
 use strict;
+use Test::More;
+BEGIN {
+  plan skip_all => "Test not compatible with Windows" if $^O =~ /MSWin/i;
+}
 BEGIN {
 	require 't/subs.pm';
 	our ($s_pid, $s_host, $s_port) = make_socks_server(4);
 }
-use Test::More;
+
 use lib 't';
 use IO::Socket::Socks::Wrapper(
 	Connect => {
@@ -18,7 +22,6 @@ use Connect;
 $^W = 0;
 
 SKIP: {
-	skip "fork, windows, sux" if $^O =~ /MSWin/i;
 	
 	my ($h_pid, $h_host, $h_port) = make_http_server();
 	
