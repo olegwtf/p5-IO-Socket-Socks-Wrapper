@@ -1,8 +1,8 @@
 use IO::Socket::INET;
 use IO::Socket::Socks qw/:constants $SOCKS_ERROR/;
 
-sub make_socks_server($) {
-	my $version = shift;
+sub make_socks_server($;$) {
+	my ($version, $delay) = @_;
 	
 	my $serv = IO::Socket::Socks->new(Listen => 3, SocksVersion => $version)
 		or die $@;
@@ -28,6 +28,7 @@ sub make_socks_server($) {
 				if($socket)
 				{
 					# request granted
+					sleep $delay if $delay;
 					$client->command_reply($version == 4 ? REQUEST_GRANTED : REPLY_SUCCESS, $socket->sockhost, $socket->sockport);
 				}
 				else
