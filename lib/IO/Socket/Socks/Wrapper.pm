@@ -6,7 +6,7 @@ no warnings 'redefine';
 use Socket;
 use base 'Exporter';
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 our @EXPORT_OK = ('connect', 'wrap_connection');
 
 # cache
@@ -442,7 +442,7 @@ description see above.
 =head1 NOTICE
 
 Default timeout for wrapped connect is timeout value for socket on which we trying to connect. This timeout value checked only
-for sockets inherited from IO::Socket. For example C<LWP::UserAgent->new(timeout => 5)> creates socket with timeout 5 sec, so no 
+for sockets inherited from IO::Socket. For example C<LWP::UserAgent-E<gt>new(timeout =E<gt> 5)> creates socket with timeout 5 sec, so no 
 need to additionally specify timeout for C<IO::Socket::Socks::Wrapper>. If socket timeout not specified or socket not inherited
 from IO::Socket then default timeout will be 180 sec. You can specify your own value using C<Timeout> option. Set it to zero if you
 don't want to limit connection attempt time.

@@ -2,12 +2,17 @@ Changes
 lib/IO/Socket/Socks/Wrapped.pm
 lib/IO/Socket/Socks/Wrapper.pm
 Makefile.PL
-MANIFEST
+MANIFEST			This list of files
 README
-t/1_in_pkg.t
-t/2_in_pkg_no_global.t
-t/3_global.t
-t/4_sub.t
-t/5_obj.t
-t/6_live.t
+t/01_in_pkg.t
+t/02_in_pkg_no_global.t
+t/03_global.t
+t/04_sub.t
+t/05_obj.t
+t/06_builtin.t
+t/07_mix.t
+t/08_timeout.t
+t/09_timeout_global.t
+t/10_live.t
+t/Connect.pm
 t/subs.pm
