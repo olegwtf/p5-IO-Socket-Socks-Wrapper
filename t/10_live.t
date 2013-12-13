@@ -30,7 +30,8 @@ SKIP: {
 	$ua = LWP::UserAgent->new(timeout => 10);
 	$page = $ua->get('https://encrypted.google.com')->content;
 	ok((() = $page =~ /google/g) >= 2, 'LWP+IO::Socket::SSL socks5 wrapping +Server');
-	ok(IO::Socket::SSL->new("encrypted.google.com:443"), 'IO::Socket::SSL socks5 wrapping +Server');
+	ok(IO::Socket::SSL->new("encrypted.google.com:443"), 'IO::Socket::SSL socks5 wrapping +Server')
+		or diag "IO::Socket::SSL::VERSION=$IO::Socket::SSL::VERSION";
 	
 	kill 15, $s_pid;
 	is(wait(), $s_pid, 'socks5 server terminated');
