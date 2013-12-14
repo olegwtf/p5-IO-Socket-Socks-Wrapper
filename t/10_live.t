@@ -31,7 +31,7 @@ SKIP: {
 	$page = $ua->get('https://encrypted.google.com')->content;
 	ok((() = $page =~ /google/g) >= 2, 'LWP+IO::Socket::SSL socks5 wrapping +Server');
 	ok(IO::Socket::SSL->new("encrypted.google.com:443"), 'IO::Socket::SSL socks5 wrapping +Server')
-		or diag "IO::Socket::SSL::VERSION=$IO::Socket::SSL::VERSION";
+		or diag "SYS_ERR=$!, SSL_ERR=$IO::Socket::SSL::SSL_ERROR, IO::Socket::SSL::VERSION=$IO::Socket::SSL::VERSION, Net::SSLeay::VERSION=$Net::SSLeay::VERSION";
 	
 	kill 15, $s_pid;
 	is(wait(), $s_pid, 'socks5 server terminated');
