@@ -30,7 +30,7 @@ SKIP: {
 	$ua = LWP::UserAgent->new(timeout => 10);
 	$page = $ua->get('https://encrypted.google.com')->content;
 	ok((() = $page =~ /google/g) >= 2, 'LWP+IO::Socket::SSL socks5 wrapping +Server');
-	ok(IO::Socket::SSL->new("encrypted.google.com:443"), 'IO::Socket::SSL socks5 wrapping +Server')
+	ok(IO::Socket::SSL->new(PeerAddr => "encrypted.google.com", PeerPort => 443, SSL_verify_mode => &IO::Socket::SSL::SSL_VERIFY_NONE), 'IO::Socket::SSL socks5 wrapping +Server')
 		or diag "SYS_ERR=$!, SSL_ERR=$IO::Socket::SSL::SSL_ERROR, IO::Socket::SSL::VERSION=$IO::Socket::SSL::VERSION, Net::SSLeay::VERSION=$Net::SSLeay::VERSION";
 	
 	kill 15, $s_pid;
