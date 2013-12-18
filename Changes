@@ -1,5 +1,8 @@
 Revision history for Perl extension IO::Socket::Socks::Wrapper.
 
+0.10  Wed Dec 18 23:40:35 NOVT 2013
+      - Tests fixed
+
 0.09  Thu Dec 12 16:17:59 NOVT 2013
       - Ability to wrap packages that uses built-in connect() internally
       - Fix for Timeout option (it worked only for global wrapping)

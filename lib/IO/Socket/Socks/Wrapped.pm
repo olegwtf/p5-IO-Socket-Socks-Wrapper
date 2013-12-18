@@ -3,7 +3,7 @@ package IO::Socket::Socks::Wrapped;
 use IO::Socket;
 use IO::Socket::Socks::Wrapper;
 
-our $VERSION = '0.10_3';
+our $VERSION = '0.10';
 our $AUTOLOAD;
 
 sub new {
