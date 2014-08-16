@@ -151,8 +151,7 @@ sub _connect
 	my $ref = ref($socket);
 	
 	if (($ref && $socket->isa('IO::Socket::Socks')) || !$cfg) {
-		my $timeout;
-		unless ($io_socket and $timeout = ${*$socket}{'io_socket_timeout'}) {
+		unless ($io_socket and ${*$socket}{'io_socket_timeout'}) {
 			return CORE::connect( $socket, $name );
 		}
 		
