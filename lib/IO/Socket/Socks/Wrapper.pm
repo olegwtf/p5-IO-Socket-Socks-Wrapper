@@ -13,6 +13,13 @@ our @EXPORT_OK = ('connect', 'wrap_connection');
 # pkg -> ref to pkg::sub || undef(if pkg has no connect)
 my %PKGS;
 
+# reference to &IO::Socket::connect
+my $io_socket_connect;
+sub _io_socket_connect {
+	return $io_socket_connect if $io_socket_connect;
+	$io_socket_connect = $_[0];
+}
+
 sub import
 {
 	my $mypkg = shift;
@@ -52,6 +59,9 @@ sub import
 				my $pkg_sub = exists $PKGS{$symbol} ?
 				                     $PKGS{$symbol} :
 				                     ($PKGS{$symbol} = \&$symbol);
+				
+				_io_socket_connect(\&IO::Socket::connect);
+				
 				*$symbol = sub {
 					local *IO::Socket::connect = sub {
 						_connect(@_, $cfg, 1);
@@ -73,6 +83,8 @@ sub import
 				                         ($PKGS{$pkg} = eval{ *{$symbol}{CODE} } ? \&$symbol : undef);
 				
 				*connect = sub {
+					_io_socket_connect(\&IO::Socket::connect);
+					
 					local(*IO::Socket::connect) = sub {
 						_connect(@_, $cfg, 1);
 					};
@@ -144,37 +156,9 @@ sub _connect
 			return CORE::connect( $socket, $name );
 		}
 		
-		my $blocking = $socket->blocking(0);
-		my $err;
-		
-		if (!CORE::connect( $socket, $name )) {
-			# this was ported from IO::Socket::connect();
-			if (($!{EINPROGRESS} || $!{EWOULDBLOCK})) {
-				require IO::Select;
-				my $sel = IO::Select->new($socket);
-				
-				undef $!;
-				if (!$sel->can_write($timeout)) {
-					$! = exists &Errno::ETIMEDOUT ? &Errno::ETIMEDOUT : 1 unless $!;
-					$err = $!;
-				}
-				elsif (!CORE::connect( $socket, $name ) &&
-						not ($!{EISCONN} || ($! == 10022 && $^O eq 'MSWin32'))) {
-					# Some systems refuse to re-connect() to
-					# an already open socket and set errno to EISCONN.
-					# Windows sets errno to WSAEINVAL (10022)
-					$err = $!;
-				}
-			}
-			else {
-				$err = $!;
-			}
-		}
-		
-		$socket->blocking(1) if $blocking;
-		$! = $err if $err;
-		
-		return $err ? undef : $socket;
+		# use IO::Socket::connect for timeout support
+		local *connect = sub { CORE::connect($_[0], $_[1]) };
+		return _io_socket_connect->( $socket, $name );
 	}
 	
 	my ($port, $host) = sockaddr_in($name);
