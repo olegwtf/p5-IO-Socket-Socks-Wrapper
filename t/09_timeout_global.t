@@ -3,7 +3,7 @@ use Test::More;
 our ($s_pid, $s_host, $s_port);
 BEGIN {
 	if ($^O !~ /MSWin/i) {
-		if ($ENV{SOCKS_WRAPPER_SLOW_TESTS}) {
+		if ($ENV{SOCKS_WRAPPER_SLOW_TESTS} || $ENV{AUTOMATED_TESTING}) {
 			pipe(READER, WRITER);
 			my $child = fork();
 			die 'fork: ', $! unless defined $child;
