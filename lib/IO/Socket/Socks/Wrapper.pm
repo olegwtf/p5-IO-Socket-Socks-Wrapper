@@ -20,6 +20,17 @@ sub _io_socket_connect_ref {
 	$io_socket_connect = \&IO::Socket::connect;
 }
 
+# fake handle to put under event loop while making socks handshake
+my ($blocking_reader, $blocking_writer);
+sub _get_blocking_handle {
+	unless ($blocking_reader) {
+		pipe($blocking_reader, $blocking_writer)
+			or die 'pipe(): ', $!;
+	}
+	
+	return $blocking_reader;
+}
+
 sub import
 {
 	my $mypkg = shift;
@@ -165,9 +176,22 @@ sub _connect
 	
 	# global overriding will not work with `use'
 	require IO::Socket::Socks;
+	my $io_handler = delete $cfg->{_io_handler};
 	
-	unless (exists $cfg->{Timeout}) {
+	unless ($io_handler || exists $cfg->{Timeout}) {
 		$cfg->{Timeout} = $ref && $socket->isa('IO::Socket') && ${*$socket}{'io_socket_timeout'} || 180;
+	}
+	
+	if ($io_handler) {
+		$io_handler = $io_handler->();
+		require POSIX;
+		
+		my $fd = fileno($socket);
+		my $tmp_fd = POSIX::dup($fd) // die 'dup2(): ', $!;
+		open my $tmp_socket, '+<&=' . $fd or die 'open(): ', $!;
+		POSIX::dup2(fileno(_get_blocking_handle()), $fd) // die 'dup(): ', $!;
+		$io_handler->{orig_socket} = $socket;
+		$socket = $tmp_socket;
 	}
 	
 	IO::Socket::Socks->new_from_socket(
@@ -178,6 +202,77 @@ sub _connect
 	) or return;
 	
 	bless $socket, $ref if $ref; # XXX: should we unbless for GLOB?
+	
+	if ($io_handler) {
+		my ($r_cb, $w_cb); 
+		
+		my $on_finish = sub {
+			POSIX::dup2(fileno($socket), fileno($io_handler->{orig_socket})) // die 'dup2(): ', $!;
+			close $socket;
+		};
+		
+		my $on_error = sub {
+			shutdown($socket, 2);
+			POSIX::dup2(fileno($socket), fileno($io_handler->{orig_socket}))  // die 'dup2(): ', $!;
+			close $socket;
+		};
+		
+		$r_cb = sub {
+			if ($socket->ready) {
+				$io_handler->{unset_read_watcher}->($socket);
+				
+				if ($io_handler->{destroy_io_watcher}) {
+					$io_handler->{destroy_io_watcher}->($socket);
+				}
+				
+				$on_finish->();
+			}
+			elsif ($IO::Socket::Socks::SOCKS_ERROR == &IO::Socket::Socks::SOCKS_WANT_WRITE) {
+				$io_handler->{unset_read_watcher}->($socket);
+				$io_handler->{set_write_watcher}->($socket, $w_cb);
+			}
+			else {
+				$io_handler->{unset_read_watcher}->($socket);
+				
+				if ($io_handler->{destroy_io_watcher}) {
+					$io_handler->{destroy_io_watcher}->($socket);
+				}
+				
+				$on_error->();
+			}
+		};
+		
+		$w_cb = sub {
+			if ($socket->ready) {
+				$io_handler->{unset_write_watcher}->($socket);
+				
+				if ($io_handler->{destroy_io_watcher}) {
+					$io_handler->{destroy_io_watcher}->($socket);
+				}
+				
+				$on_finish->();
+			}
+			elsif ($IO::Socket::Socks::SOCKS_ERROR == &IO::Socket::Socks::SOCKS_WANT_READ) {
+				$io_handler->{unset_write_watcher}->($socket);
+				$io_handler->{set_read_watcher}->($socket, $r_cb);
+			}
+			else {
+				$io_handler->{unset_write_watcher}->($socket);
+				
+				if ($io_handler->{destroy_io_watcher}) {
+					$io_handler->{destroy_io_watcher}->($socket);
+				}
+				
+				$on_error->();
+			}
+		};
+		
+		if ($io_handler->{init_io_watcher}) {
+			$io_handler->{init_io_watcher}->($socket, $r_cb, $w_cb);
+		}
+		
+		$io_handler->set_write_watcher($socket, $w_cb);
+	}
 	
 	return $socket;
 }
