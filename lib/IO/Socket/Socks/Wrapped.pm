@@ -14,7 +14,7 @@ sub new {
 sub AUTOLOAD {
 	my $self = shift;
 	
-	IO::Socket::Socks::Wrapper::_io_socket_connect(\&IO::Socket::connect);
+	IO::Socket::Socks::Wrapper::_io_socket_connect_ref();
 	
 	local *IO::Socket::connect = sub {
 		return IO::Socket::Socks::Wrapper::_connect(@_, $self->{cfg}, 1);

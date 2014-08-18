@@ -15,9 +15,9 @@ my %PKGS;
 
 # reference to &IO::Socket::connect
 my $io_socket_connect;
-sub _io_socket_connect {
+sub _io_socket_connect_ref {
 	return $io_socket_connect if $io_socket_connect;
-	$io_socket_connect = $_[0];
+	$io_socket_connect = \&IO::Socket::connect;
 }
 
 sub import
@@ -60,7 +60,7 @@ sub import
 				                     $PKGS{$symbol} :
 				                     ($PKGS{$symbol} = \&$symbol);
 				
-				_io_socket_connect(\&IO::Socket::connect);
+				_io_socket_connect_ref();
 				
 				*$symbol = sub {
 					local *IO::Socket::connect = sub {
@@ -83,7 +83,7 @@ sub import
 				                         ($PKGS{$pkg} = eval{ *{$symbol}{CODE} } ? \&$symbol : undef);
 				
 				*connect = sub {
-					_io_socket_connect(\&IO::Socket::connect);
+					_io_socket_connect_ref();
 					
 					local(*IO::Socket::connect) = sub {
 						_connect(@_, $cfg, 1);
@@ -157,7 +157,7 @@ sub _connect
 		
 		# use IO::Socket::connect for timeout support
 		local *connect = sub { CORE::connect($_[0], $_[1]) };
-		return _io_socket_connect->( $socket, $name );
+		return _io_socket_connect_ref->( $socket, $name );
 	}
 	
 	my ($port, $host) = sockaddr_in($name);
