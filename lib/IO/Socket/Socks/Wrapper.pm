@@ -206,12 +206,25 @@ sub _connect
 	if ($io_handler) {
 		my ($r_cb, $w_cb); 
 		
+		my $tie_obj = tie *{$io_handler->{orig_socket}}, 'IO::Socket::Socks::Wrapper::Handle', $io_handler->{orig_socket}, sub {
+			$io_handler->{unset_read_watcher}->($socket);
+			$io_handler->{unset_write_watcher}->($socket);
+			
+			if ($io_handler->{destroy_io_watcher}) {
+				$io_handler->{destroy_io_watcher}->($socket);
+			}
+			
+			close $socket;
+		};
+		
 		my $on_finish = sub {
+			$tie_obj->handshake_done(1);
 			POSIX::dup2(fileno($socket), fileno($io_handler->{orig_socket})) // die 'dup2(): ', $!;
 			close $socket;
 		};
 		
 		my $on_error = sub {
+			$tie_obj->handshake_done(1);
 			shutdown($socket, 2);
 			POSIX::dup2(fileno($socket), fileno($io_handler->{orig_socket}))  // die 'dup2(): ', $!;
 			close $socket;
@@ -275,6 +288,67 @@ sub _connect
 	}
 	
 	return $socket;
+}
+
+package IO::Socket::Socks::Wrapper::Handle;
+
+use strict;
+
+sub TIEHANDLE {
+	my ($class, $orig_handle, $cleanup_cb) = @_;
+	
+	open my $self, '+<&=' . fileno($orig_handle)
+		or die 'open: ', $!;
+	
+	${*$self}{handshake_done} = 0;
+	${*$self}{cleanup_cb} = $cleanup_cb;
+	
+	bless $self, $class;
+}
+
+sub handshake_done {
+	my $self = shift;
+	
+	if (@_) {
+		${*$self}{handshake_done} = $_[0];
+	}
+	
+	return ${*$self}{handshake_done};
+}
+
+sub READ {
+	my $self = shift;
+	sysread($self, $_[0], $_[1], @_ > 2 ? $_[2] : ());
+}
+
+sub WRITE {
+	my $self = shift;
+	syswrite($self, $_[0], $_[1], @_ > 2 ? $_[2] : ());
+}
+
+sub FILENO {
+	my $self = shift;
+	fileno($self);
+}
+
+sub CLOSE {
+	my $self = shift;
+	
+	POSIX::close(fileno $self);
+	
+	unless ($self->handshake_done) {
+		$self->handshake_done(1);
+		${*$self}{cleanup_cb}->();
+	}
+}
+
+sub DESTROY {
+	my $self = shift;
+	
+	unless ($self->handshake_done) {
+		$self->handshake_done(1);
+		${*$self}{cleanup_cb}->();
+	}
 }
 
 1;
