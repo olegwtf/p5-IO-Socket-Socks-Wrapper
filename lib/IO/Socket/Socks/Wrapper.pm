@@ -176,7 +176,7 @@ sub _connect
 	
 	# global overriding will not work with `use'
 	require IO::Socket::Socks;
-	my $io_handler = delete $cfg->{_io_handler};
+	my $io_handler = $cfg->{_io_handler};
 	
 	unless ($io_handler || exists $cfg->{Timeout}) {
 		$cfg->{Timeout} = $ref && $socket->isa('IO::Socket') && ${*$socket}{'io_socket_timeout'} || 180;
@@ -188,7 +188,7 @@ sub _connect
 		
 		my $fd = fileno($socket);
 		my $tmp_fd = POSIX::dup($fd) // die 'dup2(): ', $!;
-		open my $tmp_socket, '+<&=' . $fd or die 'open(): ', $!;
+		open my $tmp_socket, '+<&=' . $tmp_fd or die 'open(): ', $!;
 		POSIX::dup2(fileno(_get_blocking_handle()), $fd) // die 'dup(): ', $!;
 		$io_handler->{orig_socket} = $socket;
 		$socket = $tmp_socket;
@@ -201,7 +201,7 @@ sub _connect
 		%$cfg
 	) or return;
 	
-	bless $socket, $ref if $ref; # XXX: should we unbless for GLOB?
+	bless $socket, $ref if $ref && !$io_handler; # XXX: should we unbless for GLOB?
 	
 	if ($io_handler) {
 		my ($r_cb, $w_cb); 
@@ -284,7 +284,7 @@ sub _connect
 			$io_handler->{init_io_watcher}->($socket, $r_cb, $w_cb);
 		}
 		
-		$io_handler->set_write_watcher($socket, $w_cb);
+		$io_handler->{set_write_watcher}->($socket, $w_cb);
 	}
 	
 	return $socket;
