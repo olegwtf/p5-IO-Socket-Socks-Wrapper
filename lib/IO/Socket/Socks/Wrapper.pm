@@ -244,7 +244,7 @@ sub _connect
 				$io_handler->{unset_read_watcher}->($socket);
 				$io_handler->{set_write_watcher}->($socket, $w_cb);
 			}
-			else {
+			elsif ($IO::Socket::Socks::SOCKS_ERROR != &IO::Socket::Socks::SOCKS_WANT_READ) {
 				$io_handler->{unset_read_watcher}->($socket);
 				
 				if ($io_handler->{destroy_io_watcher}) {
@@ -269,7 +269,7 @@ sub _connect
 				$io_handler->{unset_write_watcher}->($socket);
 				$io_handler->{set_read_watcher}->($socket, $r_cb);
 			}
-			else {
+			elsif ($IO::Socket::Socks::SOCKS_ERROR != &IO::Socket::Socks::SOCKS_WANT_WRITE) {
 				$io_handler->{unset_write_watcher}->($socket);
 				
 				if ($io_handler->{destroy_io_watcher}) {
