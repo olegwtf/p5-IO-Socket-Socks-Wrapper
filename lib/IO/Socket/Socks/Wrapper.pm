@@ -185,12 +185,14 @@ sub _connect
 	if ($io_handler) {
 		$io_handler = $io_handler->();
 		require POSIX;
+		require Scalar::Util;
 		
 		my $fd = fileno($socket);
 		my $tmp_fd = POSIX::dup($fd) // die 'dup2(): ', $!;
 		open my $tmp_socket, '+<&=' . $tmp_fd or die 'open(): ', $!;
 		POSIX::dup2(fileno(_get_blocking_handle()), $fd) // die 'dup(): ', $!;
 		$io_handler->{orig_socket} = $socket;
+		Scalar::Util::weaken($io_handler->{orig_socket});
 		$socket = $tmp_socket;
 	}
 	
@@ -206,7 +208,7 @@ sub _connect
 	if ($io_handler) {
 		my ($r_cb, $w_cb); 
 		
-		my $tie_obj = tie *{$io_handler->{orig_socket}}, 'IO::Socket::Socks::Wrapper::Handle', $io_handler->{orig_socket}, sub {
+		tie *{$io_handler->{orig_socket}}, 'IO::Socket::Socks::Wrapper::Handle', $io_handler->{orig_socket}, sub {
 			$io_handler->{unset_read_watcher}->($socket);
 			$io_handler->{unset_write_watcher}->($socket);
 			
@@ -218,14 +220,14 @@ sub _connect
 		};
 		
 		my $on_finish = sub {
-			$tie_obj->handshake_done(1);
+			tied(*{$io_handler->{orig_socket}})->handshake_done(1);
 			POSIX::dup2(fileno($socket), fileno($io_handler->{orig_socket})) // die 'dup2(): ', $!;
 			close $socket;
 		};
 		
 		my $on_error = sub {
-			$tie_obj->handshake_done(1);
-			shutdown($socket, 2);
+			tied(*{$io_handler->{orig_socket}})->handshake_done(1);
+			shutdown($socket, 0);
 			POSIX::dup2(fileno($socket), fileno($io_handler->{orig_socket}))  // die 'dup2(): ', $!;
 			close $socket;
 		};
@@ -287,7 +289,7 @@ sub _connect
 		$io_handler->{set_write_watcher}->($socket, $w_cb);
 	}
 	
-	return $socket;
+	return 1;
 }
 
 package IO::Socket::Socks::Wrapper::Handle;

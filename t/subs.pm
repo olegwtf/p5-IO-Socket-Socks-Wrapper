@@ -1,7 +1,7 @@
 use IO::Socket::INET;
 use IO::Socket::Socks qw/:constants $SOCKS_ERROR/;
 
-sub make_socks_server($;$) {
+sub make_socks_server($;$$) {
 	my ($version, $delay) = @_;
 	
 	my $serv = IO::Socket::Socks->new(Listen => 3, SocksVersion => $version)
@@ -12,61 +12,71 @@ sub make_socks_server($;$) {
 	
 	if ($child == 0) {
 		my $connections_processed = 0;
+		my $need_to_fail;
 		local $SIG{TERM} = sub { exit $connections_processed };
+		local $SIG{USR1} = sub { $need_to_fail = !$need_to_fail };
 		
 		while (1) {
 			my $client = $serv->accept()
 				or next;
 			
 			$connections_processed++;
-			my ($cmd, $host, $port) = @{$client->command()};
 			
-			if($cmd == CMD_CONNECT)
-			{ # connect
-				my $socket = IO::Socket::INET->new(PeerHost => $host, PeerPort => $port, Timeout => 10);
+			my $subchild = fork();
+			die 'subfork: ', $! unless defined $subchild;
+			
+			if ($subchild == 0) {
+				my ($cmd, $host, $port) = @{$client->command()};
 				
-				if($socket)
-				{
-					# request granted
-					sleep $delay if $delay;
-					$client->command_reply($version == 4 ? REQUEST_GRANTED : REPLY_SUCCESS, $socket->sockhost, $socket->sockport);
-				}
-				else
-				{
-					# request rejected or failed
-					$client->command_reply($version == 4 ? REQUEST_FAILED : REPLY_HOST_UNREACHABLE, $host, $port);
-					$client->close();
-					next;
-				}
-				
-				my $selector = IO::Select->new($socket, $client);
-				
-				MAIN_CONNECT:
-				while(1)
-				{
-					my @ready = $selector->can_read();
-					foreach my $s (@ready)
+				if($cmd == CMD_CONNECT)
+				{ # connect
+					my $socket = !$need_to_fail ? IO::Socket::INET->new(PeerHost => $host, PeerPort => $port, Timeout => 10) : undef;
+					
+					if($socket)
 					{
-						my $readed = $s->sysread(my $data, 1024);
-						unless($readed)
+						# request granted
+						sleep $delay if $delay;
+						$client->command_reply($version == 4 ? REQUEST_GRANTED : REPLY_SUCCESS, $socket->sockhost, $socket->sockport);
+					}
+					else
+					{
+						# request rejected or failed
+						$client->command_reply($version == 4 ? REQUEST_FAILED : REPLY_HOST_UNREACHABLE, $host, $port);
+						$client->close();
+						exit;
+					}
+					
+					my $selector = IO::Select->new($socket, $client);
+					
+					MAIN_CONNECT:
+					while(1)
+					{
+						my @ready = $selector->can_read();
+						foreach my $s (@ready)
 						{
-							# error or socket closed
-							$socket->close();
-							last MAIN_CONNECT;
-						}
-						
-						if($s == $socket)
-						{
-							# return to client data readed from remote host
-							$client->syswrite($data);
-						}
-						else
-						{
-							# return to remote host data readed from the client
-							$socket->syswrite($data);
+							my $readed = $s->sysread(my $data, 1024);
+							unless ($readed)
+							{
+								# error or socket closed
+								$socket->close();
+								last MAIN_CONNECT;
+							}
+							
+							if($s == $socket)
+							{
+								# return to client data readed from remote host
+								$client->syswrite($data);
+							}
+							else
+							{
+								# return to remote host data readed from the client
+								$socket->syswrite($data);
+							}
 						}
 					}
 				}
+				
+				exit;
 			}
 		}
 	}
