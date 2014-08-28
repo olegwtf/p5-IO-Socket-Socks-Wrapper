@@ -13,6 +13,8 @@ t/06_builtin.t
 t/07_mix.t
 t/08_timeout.t
 t/09_timeout_global.t
-t/10_live.t
+t/10_event_loop_mojo.t
+t/11_event_loop_anyevent.t
+t/12_live.t
 t/Connect.pm
 t/subs.pm
