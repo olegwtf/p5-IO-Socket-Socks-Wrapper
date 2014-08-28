@@ -85,7 +85,7 @@ eval {
 };
 if ($@) {
 	kill 15, $s_pid;
-	plan skip_all => 'Mojolicious 2.65+ required for this test';
+	plan skip_all => 'Mojolicious 4.85+ required for this test';
 }
 
 my ($h_pid, $h_host, $h_port) = make_http_server();
