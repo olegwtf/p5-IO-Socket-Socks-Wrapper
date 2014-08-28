@@ -3,7 +3,7 @@ use Test::More;
 our ($s_pid, $s_host, $s_port);
 BEGIN {
 	if ($^O !~ /MSWin/i) {
-		if ($ENV{SOCKS_WRAPPER_SLOW_TESTS} || $ENV{AUTOMATED_TESTING}) {
+		if ($ENV{SOCKS_WRAPPER_SLOW_TESTS} || $ENV{AUTOMATED_TESTING} || $ENV{EXTENDED_TESTING}) {
 			require 't/subs.pm';
 			($s_pid, $s_host, $s_port) = make_socks_server(4, 5);
 		}
