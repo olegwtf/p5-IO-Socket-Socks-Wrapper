@@ -119,6 +119,7 @@ Mojo::IOLoop->start();
 ok($tick_cnt > 5, 'making socks handshake didn\'t block event loop')
 	or diag $tick_cnt;
 
+diag '2 sec for next test';
 $destroyed = 0;
 $ua->connect_timeout(2);
 my $start = time;

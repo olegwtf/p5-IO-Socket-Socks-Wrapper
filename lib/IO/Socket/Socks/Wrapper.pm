@@ -336,12 +336,12 @@ sub FILENO {
 sub CLOSE {
 	my $self = shift;
 	
-	POSIX::close(fileno $self);
-	
 	unless ($self->handshake_done) {
 		$self->handshake_done(1);
 		${*$self}{cleanup_cb}->();
 	}
+	
+	close $self;
 }
 
 sub DESTROY {
