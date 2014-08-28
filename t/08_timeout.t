@@ -14,6 +14,8 @@ BEGIN {
 	else {
 		plan skip_all => "No windows support for this test";
 	}
+	
+	$ENV{PERL_HTTP_TINY_IPV4_ONLY} = 1;
 }
 use IO::Socket::Socks::Wrapper (
 	Connect => {

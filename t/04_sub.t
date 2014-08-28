@@ -6,6 +6,7 @@ require 't/subs.pm';
 use strict;
 
 $^W = 0;
+$ENV{PERL_HTTP_TINY_IPV4_ONLY} = 1;
 
 SKIP: {
 	skip "fork, windows, sux" if $^O =~ /MSWin/i;

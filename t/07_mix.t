@@ -38,6 +38,8 @@ BEGIN {
 			plan skip_all => "Net::FTP or HTTP::Tiny was not found";
 		}
 	}
+	
+	$ENV{PERL_HTTP_TINY_IPV4_ONLY} = 1;
 }
 
 use HTTP::Tiny;
