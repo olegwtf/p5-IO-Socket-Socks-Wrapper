@@ -29,6 +29,8 @@ use IO::Socket::Socks::Wrapper (
 use lib 't';
 use Connect;
 
+$Net::HTTP::SOCKET_CLASS = 'IO::Socket::INET';
+
 my ($f_pid, $f_host, $f_port) = make_ftp_server();
 diag "2 sec for next test";
 my $start = time;

@@ -7,6 +7,7 @@ use strict;
 
 $^W = 0;
 $ENV{PERL_HTTP_TINY_IPV4_ONLY} = 1;
+$Net::HTTP::SOCKET_CLASS = 'IO::Socket::INET';
 
 SKIP: {
 	skip "no fork support" if $^O =~ /MSWin/i;

@@ -6,12 +6,13 @@ require 't/subs.pm';
 use strict;
 
 $^W = 0;
+$Net::HTTP::SOCKET_CLASS = 'IO::Socket::INET';
 
 SKIP: {
 	skip "fork, windows, sux" if $^O =~ /MSWin/i;
 	eval { require LWP::UserAgent; require LWP::Protocol::http; }
 		or skip "No LWP found";
-		
+	
 	my ($s_pid, $s_host, $s_port) = make_socks_server(4);
 	my ($h_pid, $h_host, $h_port) = make_http_server();
 	

@@ -31,6 +31,7 @@ use Test::More;
 require 't/subs.pm';
 
 $^W = 0;
+$Net::HTTP::SOCKET_CLASS = 'IO::Socket::INET';
 
 SKIP: {
 	skip "fork, windows, sux" if $^O =~ /MSWin/i;
