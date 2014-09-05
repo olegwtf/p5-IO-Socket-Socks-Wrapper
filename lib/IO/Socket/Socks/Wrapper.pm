@@ -26,6 +26,26 @@ sub _get_blocking_handle {
 	unless ($blocking_reader) {
 		pipe($blocking_reader, $blocking_writer)
 			or die 'pipe(): ', $!;
+		
+		vec(my $win, fileno($blocking_reader), 1) = 1;
+		if (select(undef, $win, undef, 0)) {
+			# oh shi~, this system just sux
+			# reader from pipe() marked as ready for write
+			($blocking_reader, $blocking_writer) = ($blocking_writer, $blocking_reader);
+			$blocking_reader->blocking(0);
+			
+			my $garbage = '\0' x 4096;
+			my ($writed, $total_writed);
+			while ($writed = syswrite($blocking_reader, $garbage)) {
+				$total_writed += $writed;
+				
+				if ($total_writed > 2097152) {
+					# pipe with buffer more than 2 mb
+					# are u kidding me?
+					die "Can't create blocking handle";
+				}
+			}
+		}
 	}
 	
 	return $blocking_reader;
