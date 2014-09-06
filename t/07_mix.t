@@ -40,6 +40,9 @@ BEGIN {
 	}
 	
 	$ENV{PERL_HTTP_TINY_IPV4_ONLY} = 1;
+	$ENV{http_proxy} = $ENV{HTTP_PROXY} = 
+	$ENV{https_proxy} = $ENV{HTTPS_PROXY} = 
+	$ENV{all_proxy} = $ENV{ALL_PROXY} = undef;
 }
 
 use HTTP::Tiny;

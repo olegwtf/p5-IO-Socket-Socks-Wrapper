@@ -76,6 +76,9 @@ use IO::Socket::Socks::Wrapper {
 
 require 't/subs.pm';
 $ENV{MOJO_NO_IPV6} = 1;
+$ENV{http_proxy} = $ENV{HTTP_PROXY} = 
+$ENV{https_proxy} = $ENV{HTTPS_PROXY} = 
+$ENV{all_proxy} = $ENV{ALL_PROXY} = undef;
 
 eval {
 	require Mojolicious;
