@@ -8,6 +8,10 @@ BEGIN {
 		plan skip_all => 'Can\'t run this test on windows';
 	}
 	
+	unless ($ENV{SOCKS_WRAPPER_SLOW_TESTS} || $ENV{AUTOMATED_TESTING} || $ENV{EXTENDED_TESTING}) {
+		plan skip_all => "SOCKS_WRAPPER_SLOW_TESTS environment variable should has true value to run this tests";
+	}
+	
 	pipe(READER, WRITER);
 	my $child = fork();
 	die 'fork: ', $! unless defined $child;
