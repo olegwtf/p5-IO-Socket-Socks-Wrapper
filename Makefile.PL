@@ -7,7 +7,7 @@ WriteMakefile(
     LICENSE            => 'perl',
     VERSION_FROM       => 'lib/IO/Socket/Socks/Wrapper.pm',
     PREREQ_PM          => { IO::Socket::Socks => 0.63 }, # e.g., Module::Name => 1.1,
-    BUILD_REQUIRES     => { Test::More => 0.88, Mojolicious => 4.85, AnyEvent => 0, AnyEvent::HTTP => 0 },
+    BUILD_REQUIRES     => { Test::More => 0.88 },
     CONFIGURE_REQUIRES => { 'ExtUtils::MakeMaker' => 6.52 },
     META_MERGE         => { resources => {repository => 'https://github.com/olegwtf/p5-IO-Socket-Socks-Wrapper'} },
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
