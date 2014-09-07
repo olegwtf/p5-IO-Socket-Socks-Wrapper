@@ -29,7 +29,7 @@ sub _get_blocking_handle {
 		
 		vec(my $win, fileno($blocking_reader), 1) = 1;
 		if (select(undef, $win, undef, 0)) {
-			# oh shi~, this system just sux
+			# oh shi~, this system is crazy
 			# reader from pipe() marked as ready for write
 			($blocking_reader, $blocking_writer) = ($blocking_writer, $blocking_reader);
 			$blocking_reader->blocking(0);
@@ -379,11 +379,39 @@ __END__
 
 =head1 NAME
 
-IO::Socket::Socks::Wrapper - Allow any perl package to work through a socks proxy
+IO::Socket::Socks::Wrapper - Add SOCKS support for any perl object / package / program
 
 =head1 SYNOPSIS
 
-=over
+	use IO::Socket::Socks::Wrapper {
+		ProxyAddr => 'localhost',
+		ProxyPort => 1080
+	};
+	
+	connect($socket, $name); # will make connection through a socks proxy
+
+=head1 DESCRIPTION
+
+C<IO::Socket::Socks::Wrapper> allows to wrap up the network connections into socks proxy. It can wrap up any network connection,
+connection from separate packages or even connection from separate object. It can also play well with your preferred event loop
+and do not block it.
+
+=head1 METHODS
+
+=head2 import( CFG )
+
+import() is invoked when C<IO::Socket::Socks::Wrapper> loaded by `use' command. Later it can be invoked manually
+to change proxy. Global overriding will not work in the packages that was loaded before calling 
+IO::Socket::Socks::Wrapper->import(). So, for this purposes `use IO::Socket::Socks::Wrapper' with $hashref argument
+should be before any other `use' statements.
+
+=head3 CFG syntax
+
+=head4 Global wrapping
+
+Only $hashref should be specified. $hashref is a reference to a hash with key/value pairs same as L<IO::Socket::Socks>
+constructor options, but without (Connect|Bind|Udp)Addr and (Connect|Bind|Udp)Port. To disable wrapping $hashref could
+be scalar with false value.
 
 	# we can wrap all connections
 	use IO::Socket::Socks::Wrapper { # should be before any other `use'
@@ -396,27 +424,17 @@ IO::Socket::Socks::Wrapper - Allow any perl package to work through a socks prox
 	# except Net::FTP
 	IO::Socket::Socks::Wrapper->import(Net::FTP:: => 0); # direct network access
 
-=back
+=head4 Wrapping package that inherits from IO::Socket
 
-=over
+Examples are: Net::FTP, Net::POP3, Net::HTTP
 
-	# we can wrap connection for separate object
-	# if package internally uses IO::Socket for connections (for most this is true)
-	
-	use v5.10;
-	use IO::Socket::Socks::Wrapper 'wrap_connection';
-	use Mojo::UserAgent;
-	
-	my $ua = wrap_connection(Mojo::UserAgent->new, {
-		ProxyAddr => 'localhost',
-		ProxyPort => 1080,
-		SocksDebug => 1
-	});
-	
-	# $ua now uses socks5 proxy for connections
-	say $ua->get('http://www.google.com')->success->code;
+	'pkg' => $hashref
 
-=back
+Where pkg is a package name that is responsible for connections. For example if you want to wrap LWP http connections, then module
+name should be Net::HTTP, for https connections it should be Net::HTTPS or even LWP::Protocol::http::Socket and
+LWP::Protocol::https::Socket respectively (see examples below). You really need to look at the source code of the package
+which you want to wrap to determine the name for wrapping. Or use global wrapping which will wrap all that can. Use `SocksDebug' to
+verify that wrapping works. For $hashref description see above.
 
 =over
 
@@ -461,6 +479,8 @@ IO::Socket::Socks::Wrapper - Allow any perl package to work through a socks prox
 
 =back
 
+And if package has no separate module you should load module with this package manually
+
 =over
 
 	# we can wrap connection for packages that hasn't separate modules
@@ -501,7 +521,40 @@ IO::Socket::Socks::Wrapper - Allow any perl package to work through a socks prox
 
 =back
 
-=over
+=head4 Wrapping package that uses built-in connect()
+
+Examples are: Net::Telnet
+
+	'pkg' => $hashref
+
+Syntax is the same as for wrapping package that inherits from IO::Socket except for one point.
+Replacing of built-in connect() should be performed before package being actually loaded. For this purposes you should specify
+C<_norequire> key with true value for $hashref CFG. This will prevent package loading, so you need to require this package manually
+after.
+
+	# we can wrap packages that uses bult-in connect()
+	# Net::Telnet for example
+	
+	use IO::Socket::Socks::Wrapper (
+		Net::Telnet => {
+			_norequire => 1, # should tell do not load it
+			                 # because buil-in connect should be overrided
+			                 # before package being compiled
+			ProxyAddr => 'localhost',
+			ProxyPort => 1080,
+			SocksDebug => 1
+		}
+	);
+	use Net::Telnet; # and load it after manually
+
+=head4 Wrapping package that uses IO::Socket object or class object inherited from IO::Socket as internal socket handle
+
+Examples are: HTTP::Tiny (HTTP::Tiny::Handle::connect)
+
+	'pkg::sub()' => $hashref
+
+Where sub is a name of subroutine contains IO::Socket object creation/connection.
+Parentheses required. For pkg and $hashref description see above.
 
 	# we can wrap packages that is not inherited from IO::Socket
 	# but uses IO::Socket object as internal socket handle
@@ -526,90 +579,243 @@ IO::Socket::Socks::Wrapper - Allow any perl package to work through a socks prox
 	# and get page without socks
 	$page = HTTP::Tiny->new->get('http://www.google.com/')->{content};
 
-=back
-
-=over
-
-	# we can wrap packages that uses bult-in connect()
-	# Net::Telnet for example
-	
-	use IO::Socket::Socks::Wrapper (
-		Net::Telnet => {
-			_norequire => 1, # should tell do not load it
-			                 # because buil-in connect should be overrided
-			                 # before package being compiled
-			ProxyAddr => 'localhost',
-			ProxyPort => 1080,
-			SocksDebug => 1
-		}
-	);
-	use Net::Telnet; # and load it after manually
-
-=back
-
-=head1 DESCRIPTION
-
-C<IO::Socket::Socks::Wrapper> allows to wrap up the network connections into socks proxy. It can wrap up any network connection,
-connection from separate packages or even connection from separate object.
-
-=head1 METHODS
-
-=head2 import( CFG )
-
-import() is invoked when C<IO::Socket::Socks::Wrapper> loaded by `use' command. Later it can be invoked manually
-to change proxy. Global overriding will not work in the packages that was loaded before calling 
-IO::Socket::Socks::Wrapper->import(). So, for this purposes `use IO::Socket::Socks::Wrapper' with $hashref argument
-should be before any other `use' statements.
-
-=head3 CFG syntax
-
-=over
-
-=item Global wrapping
-
-Only $hashref should be specified. $hashref is a reference to a hash with key/value pairs same as L<IO::Socket::Socks>
-constructor options, but without (Connect|Bind|Udp)Addr and (Connect|Bind|Udp)Port. To disable wrapping $hashref could
-be scalar with false value.
-
-=item Wrapping package that inherits from IO::Socket
-
-Examples are: Net::FTP, Net::POP3, Net::HTTP
-
-	'pkg' => $hashref
-
-Where pkg is a package name that is responsible for connections. For example if you want to wrap LWP http connections, then module
-name should be Net::HTTP, for https connections it should be Net::HTTPS or even LWP::Protocol::http::Socket and
-LWP::Protocol::https::Socket respectively (see examples above). You really need to look at the source code of the package
-which you want to wrap to determine the name for wrapping. Or use global wrapping which will wrap all that can. Use `SocksDebug' to
-verify that wrapping works. For $hashref description see above.
-
-=item Wrapping package that uses built-in connect()
-
-Examples are: Net::Telnet
-
-	'pkg' => $hashref
-
-Syntax is the same as for wrapping package that inherits from IO::Socket except for one point.
-Replacing of built-in connect() should be performed before package being actually loaded. For this purposes you should specify
-C<_norequire> key with true value for $hashref CFG. This will prevent package loading, so you need to require this package manually
-after.
-
-=item Wrapping package that uses IO::Socket object or class object inherited from IO::Socket as internal socket handle
-
-Examples are: HTTP::Tiny (HTTP::Tiny::Handle::connect)
-
-	'pkg::sub()' => $hashref
-
-Where sub is a name of subroutine contains IO::Socket object creation/connection.
-Parentheses required. For pkg and $hashref description see above.
-
-=item Wrapping objects
+=head4 Wrapping objects
 
 To wrap object connection you should use wrap_connection($obj, $hashref) subroutine, which may be imported manually. $obj may be any object
 that uses IO::Socket for tcp connections creation. This subroutine will return new object which you should use. Returned object
 is object of IO::Socket::Socks::Wrapped class and it has all methods that original object has. You can also use original object as before,
 but it will create direct connections without proxy. For more details see L<IO::Socket::Socks::Wrapped> documentation. For $hashref
 description see above.
+
+	# we can wrap connection for separate object
+	# if package internally uses IO::Socket for connections (for most this is true)
+	
+	use v5.10;
+	use IO::Socket::Socks::Wrapper 'wrap_connection';
+	use Mojo::UserAgent;
+	
+	my $ua = wrap_connection(Mojo::UserAgent->new, {
+		ProxyAddr => 'localhost',
+		ProxyPort => 1080,
+		SocksDebug => 1
+	});
+	
+	# $ua now uses socks5 proxy for connections
+	say $ua->get('http://www.google.com')->success->code;
+
+
+=head4 Integration with event loops
+
+When you are using some event loop like AnyEvent or POE it is important to prevent any long blocking operations.
+By default IO::Socket::Socks::Wrapper blocks your program while it making connection and SOCKS handshake with a proxy.
+If you are using fast proxy on localhost this is not big problem, because connection to proxy and making SOCKS
+handshake will not get some significant time. But usually SOCKS proxy located somewhere in the other part of the Earth and
+is not so fast. So your event loop will suffer from this delays and even may misbehaves.
+
+Since version 0.11 IO::Socket::Socks::Wrapper introduces several hooks, so you can integrate it with any event loop and make
+event loop happy. In the CFG you should specify additional parameter with name C<_io_handler> and value is a reference to subroutine,
+which should return reference to a hash. Possible keys in this hash are:
+
+=over
+
+=item init_io_watcher => sub { my ($handle, $r_cb, $w_cb) = @_ }
+
+Value should be a reference to subroutine in which you'll make some IO watcher initialization for your event loop if needed.
+When it will be time to call this sub IO::Socket::Socks::Wrapper will pass to it 3 arguments: $handle - this is IO::Socket object,
+$r_cb - read callback that should be called when $handle will become ready for reading, $w_cb - write callback that should be called
+when $handle will become ready for writing.
+
+This parameter is optional.
+
+Let's start example to make it clear. For our example we will use Mojo::IOLoop
+
+Beginning looks like
+
+=over
+
+	use IO::Socket::Socks::Wrapper {
+		ProxyAddr   => $s_host,
+		ProxyPort   => $s_port,
+		_io_handler => sub {
+		# ...
+
+=back
+
+Here in the sub you can define some variable which you will use in the closures below
+
+=over
+
+			# ...
+			my $reactor = Mojo::IOLoop->singleton->reactor;
+			
+			return {
+				init_io_watcher => sub {
+					my ($hdl, $r_cb, $w_cb) = @_;
+					
+					# initialize IO watcher
+					$reactor->io($hdl => sub {
+						my $writable = pop;
+						
+						if ($writable) {
+							$w_cb->();
+						}
+						else {
+							$r_cb->();
+						}
+					});
+				},
+				# ...
+
+=back
+
+=item set_read_watcher => sub { my ($handle, $r_cb) = @_ }
+
+Value should be a reference to subroutine in which you'll start read watcher for passed $handle. When $handle will be ready
+for read $r_cb should be called.
+
+This parameter is not optional. Let's continue our example.
+
+Watcher already created above and all we need to do is to start watching for reading and stop watching for writing
+
+=over
+
+				# ...
+				set_read_watcher => sub {
+					my ($hdl, $cb) = @_;
+					$reactor->watch($hdl, 1, 0);
+				},
+				# ...
+
+=back
+
+=item unset_read_watcher => sub { my ($handle) = @_ }
+
+Value should be  a reference to subroutine in which you'll stop read watcher for passed $handle.
+
+This parameter is not optional
+
+=over
+
+				# ...
+				unset_read_watcher => sub {
+					my $hdl = shift;
+					$reactor->watch($hdl, 0, 0);
+				},
+				# ...
+
+=back
+
+=item set_write_watcher => sub { my ($handle, $w_cb) = @_ }
+
+Value should be a reference to subroutine in which you'll start write watcher for passed $handle. When handle will be ready
+for write $w_cb should be called.
+
+This parameter is not optional
+
+=over
+
+				# ...
+				set_write_watcher => sub {
+					my ($hdl, $cb) = @_;
+					$reactor->watch($hdl, 0, 1);
+				},
+				# ...
+
+=back
+
+=item unset_write_watcher => sub { my ($handle) = @_ }
+
+Value should be a reference to subroutine in which you'll stop write watcher for passed $handle.
+
+This parameter is not optional
+
+=over
+
+				# ...
+				unset_write_watcher => sub {
+					my $hdl = shift;
+					$reactor->watch($hdl, 0, 0);
+				},
+				# ...
+
+=back
+
+=item destroy_io_watcher => sub { my ($handle) = @_  } 
+
+Value should be a reference to subroutine in which you'll destroy watcher for passed $handle if needed.
+
+This parameter is optional
+
+=over
+
+				# ...
+				destroy_io_watcher => sub {
+					my $hdl = shift;
+					$reactor->remove($hdl);
+				}
+				# ...
+
+=back
+
+And we are done
+
+=over
+
+			# ...
+			}
+		}
+	};
+
+=back
+
+=back
+
+And here is how it may be implemented with AnyEvent
+
+=over
+
+	use IO::Socket::Socks::Wrapper {
+		ProxyAddr   => $s_host,
+		ProxyPort   => $s_port,
+		_io_handler => sub {
+			# watcher variable for closures
+			my $w;
+			
+			return {
+				# we don't need init_io_watcher
+				# and destroy_io_watcher for AnyEvent
+
+				set_read_watcher => sub {
+					# because all initialization done here
+					my ($hdl, $cb) = @_;
+					
+					$w = AnyEvent->io(
+						poll => 'r',
+						fh   => $hdl,
+						cb   => $cb
+					)
+				},
+				unset_read_watcher => sub {
+					# and destroying here
+					undef $w;
+				},
+				set_write_watcher => sub {
+					# and here
+					my ($hdl, $cb) = @_;
+					
+					$w = AnyEvent->io(
+						poll => 'w',
+						fh   => $hdl,
+						cb   => $cb
+					)
+				},
+				unset_write_watcher => sub {
+					# and here
+					undef $w;
+				}
+			}
+		}
+	};
 
 =back
 
@@ -624,6 +830,8 @@ don't want to limit connection attempt time.
 =head1 BUGS
 
 Wrapping doesn't work with impure perl packages. WWW::Curl for example.
+
+No support for IPv6 for now. IO::Socket::IP may break wrapping.
 
 =head1 SEE ALSO
 
