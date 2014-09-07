@@ -1,5 +1,10 @@
 Revision history for Perl extension IO::Socket::Socks::Wrapper.
 
+0.11  Mon Sep  8 00:28:39 NOVT 2014
+      - Ability to integrate into event loop
+      - Try to avoid using of IO::Socket::IP and HTTP proxy in the tests
+      - Bump I::S::S dep to 0.63, earlier version had bug inside new_from_socket()
+
 0.10  Wed Dec 18 23:40:35 NOVT 2013
       - Tests fixed
 
