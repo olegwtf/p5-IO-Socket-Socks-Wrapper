@@ -627,7 +627,8 @@ when $handle will become ready for writing.
 
 This parameter is optional.
 
-Let's start example to make it clear. For our example we will use Mojo::IOLoop
+Let's start example to make it clear. For our example we will use some fictional IO loop called C<Some::IOLoop>, which has same methods
+and behavior as L<Mojo::IOLoop>
 
 Beginning looks like
 
@@ -646,7 +647,7 @@ Here in the sub you can define some variable which you will use in the closures 
 =over
 
 			# ...
-			my $reactor = Mojo::IOLoop->singleton->reactor;
+			my $reactor = Some::IOLoop->singleton->reactor;
 			
 			return {
 				init_io_watcher => sub {
