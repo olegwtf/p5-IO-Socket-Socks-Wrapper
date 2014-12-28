@@ -590,19 +590,22 @@ description see above.
 	# we can wrap connection for separate object
 	# if package internally uses IO::Socket for connections (for most this is true)
 	
-	use v5.10;
 	use IO::Socket::Socks::Wrapper 'wrap_connection';
-	use Mojo::UserAgent;
+	use Net::SMTP;
 	
-	my $ua = wrap_connection(Mojo::UserAgent->new, {
+	my $smtp = wrap_connection(Net::SMTP->new('mailhost'), {
 		ProxyAddr => 'localhost',
 		ProxyPort => 1080,
 		SocksDebug => 1
 	});
 	
-	# $ua now uses socks5 proxy for connections
-	say $ua->get('http://www.google.com')->success->code;
-
+	# $smtp now uses socks5 proxy for connections
+	$smtp->to('postmaster');
+	$smtp->data();
+	$smtp->datasend("To: postmaster\n");
+	$smtp->datasend("\n");
+	$smtp->datasend("A simple test message\n");
+	$smtp->dataend();
 
 =head4 Integration with event loops
 
