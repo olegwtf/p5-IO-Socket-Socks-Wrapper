@@ -51,21 +51,20 @@ sub _get_blocking_handle {
 	return $blocking_reader;
 }
 
-sub import
-{
+sub import {
 	my $mypkg = shift;
 	
 	if (@_ == 1 && !ref($_[0]) && $_[0] eq 'wrap_connection') {
 		return __PACKAGE__->export_to_level(1, $mypkg, 'wrap_connection');
 	}
 	
-	while(my ($pkg, $cfg) = splice @_, 0, 2) {
-		unless(defined $cfg) {
+	while (my ($pkg, $cfg) = splice @_, 0, 2) {
+		unless (defined $cfg) {
 			$cfg = $pkg;
 			$pkg = undef;
 		}
 		
-		if($pkg) {
+		if ($pkg) {
 			no strict 'refs';
 			
 			my $sub;
@@ -102,7 +101,7 @@ sub import
 				};
 				next;
 			}
-			elsif($pkg->isa('IO::Socket')) {
+			elsif ($pkg->isa('IO::Socket')) {
 			# replace IO::Socket::connect
 			# if package inherits from IO::Socket
 				# save replaceable package version of the connect
@@ -176,8 +175,7 @@ sub wrap_connection {
 	return  IO::Socket::Socks::Wrapped->new(@_);
 }
 
-sub _connect
-{
+sub _connect {
 	my ($socket, $name, $cfg, $io_socket) = @_;
 	my $ref = ref($socket);
 	
