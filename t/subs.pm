@@ -4,6 +4,9 @@ use IO::Socket::Socks qw/:constants $SOCKS_ERROR/;
 sub make_socks_server($;$$) {
 	my ($version, $delay) = @_;
 	
+	my $old_socket_class = $IO::Socket::Socks::SOCKET_CLASS;
+	$IO::Socket::Socks::SOCKET_CLASS = 'IO::Socket::INET';
+	
 	my $serv = IO::Socket::Socks->new(Listen => 3, SocksVersion => $version)
 		or die $@;
 	
@@ -81,6 +84,7 @@ sub make_socks_server($;$$) {
 		}
 	}
 	
+	$IO::Socket::Socks::SOCKET_CLASS = $old_socket_class;
 	return ($child, $serv->sockhost eq "0.0.0.0" ? "127.0.0.1" : $serv->sockhost, $serv->sockport);
 }
 

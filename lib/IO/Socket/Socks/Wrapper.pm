@@ -4,6 +4,7 @@ use strict;
 no warnings 'prototype';
 no warnings 'redefine';
 use Socket;
+use IO::Handle;
 use base 'Exporter';
 
 our $VERSION = '0.12';
@@ -179,7 +180,7 @@ sub _connect {
 	my ($socket, $name, $cfg, $io_socket) = @_;
 	my $ref = ref($socket);
 	
-	if (($ref && $socket->isa('IO::Socket::Socks')) || !$cfg) {
+	if ($socket->isa('IO::Socket::Socks') || !$cfg) {
 		unless ($io_socket and ${*$socket}{'io_socket_timeout'}) {
 			return CORE::connect( $socket, $name );
 		}
@@ -200,6 +201,8 @@ sub _connect {
 		$cfg->{Timeout} = $ref && $socket->isa('IO::Socket') && ${*$socket}{'io_socket_timeout'} || 180;
 	}
 	
+	my $need_nb;
+	
 	if ($io_handler) {
 		$io_handler = $io_handler->();
 		require POSIX;
@@ -213,14 +216,25 @@ sub _connect {
 		Scalar::Util::weaken($io_handler->{orig_socket});
 		$socket = $tmp_socket;
 	}
+	elsif (!$socket->blocking) {
+		# without io handler non-blocking connection will not be success
+		# so set socket to blocking mode while making socks handshake
+		$socket->blocking(1);
+		$need_nb = 1;
+	}
 	
-	IO::Socket::Socks->new_from_socket(
+	my $ok = IO::Socket::Socks->new_from_socket(
 		$socket,
 		ConnectAddr  => $host,
 		ConnectPort  => $port,
 		%$cfg
-	) or return;
+	);
 	
+	if ($need_nb) {
+		$socket->blocking(0);
+	}
+	
+	return unless $ok;
 	bless $socket, $ref if $ref && !$io_handler; # XXX: should we unbless for GLOB?
 	
 	if ($io_handler) {
