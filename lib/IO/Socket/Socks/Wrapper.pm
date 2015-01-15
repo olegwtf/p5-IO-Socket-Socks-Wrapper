@@ -5,6 +5,7 @@ no warnings 'prototype';
 no warnings 'redefine';
 use Socket;
 use IO::Handle;
+use Errno;
 use base 'Exporter';
 
 our $VERSION = '0.12';
@@ -326,6 +327,9 @@ sub _connect {
 		}
 		
 		$io_handler->{set_write_watcher}->($socket, $w_cb);
+		
+		$! = Errno::EINPROGRESS;
+		return 0;
 	}
 	
 	return 1;
