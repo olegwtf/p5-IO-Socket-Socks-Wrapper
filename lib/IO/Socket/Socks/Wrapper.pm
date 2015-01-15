@@ -22,34 +22,35 @@ sub _io_socket_connect_ref {
 }
 
 # fake handle to put under event loop while making socks handshake
-my ($blocking_reader, $blocking_writer);
-sub _get_blocking_handle {
-	unless ($blocking_reader) {
-		pipe($blocking_reader, $blocking_writer)
-			or die 'pipe(): ', $!;
+sub _get_blocking_handles {
+	pipe(my $blocking_reader, my $blocking_writer)
+		or die 'socketpair(): ', $!;
+	
+	$blocking_writer->blocking(0);
+	$blocking_reader->blocking(0);
+	my $garbage = '\0' x 1024;
+	
+	my ($writed, $total_writed);
+	while ($writed = syswrite($blocking_writer, $garbage)) {
+		$total_writed += $writed;
 		
-		vec(my $win, fileno($blocking_reader), 1) = 1;
-		if (select(undef, $win, undef, 0)) {
-			# oh shi~, this system is crazy
-			# reader from pipe() marked as ready for write
-			($blocking_reader, $blocking_writer) = ($blocking_writer, $blocking_reader);
-			$blocking_reader->blocking(0);
-			
-			my $garbage = '\0' x 4096;
-			my ($writed, $total_writed);
-			while ($writed = syswrite($blocking_reader, $garbage)) {
-				$total_writed += $writed;
-				
-				if ($total_writed > 2097152) {
-					# pipe with buffer more than 2 mb
-					# are u kidding me?
-					die "Can't create blocking handle";
-				}
-			}
+		if ($total_writed > 2097152) {
+			# socket with buffer more than 2 mb
+			# are u kidding me?
+			die "Can't create blocking handle";
 		}
 	}
 	
-	return $blocking_reader;
+	return ($blocking_reader, $blocking_writer);
+}
+
+sub _unblock_handles {
+	my ($blocking_reader, $blocking_writer) = @_;
+	
+	while (sysread($blocking_reader, my $buf, 4096)) {
+		vec(my $win, fileno($blocking_writer), 1) = 1;
+		last if select(undef, $win, undef, 0);
+	}
 }
 
 sub import {
@@ -209,9 +210,14 @@ sub _connect {
 		require Scalar::Util;
 		
 		my $fd = fileno($socket);
-		my $tmp_fd = POSIX::dup($fd) // die 'dup2(): ', $!;
+		my $tmp_fd = POSIX::dup($fd) // die 'dup(): ', $!;
 		open my $tmp_socket, '+<&=' . $tmp_fd or die 'open(): ', $!;
-		POSIX::dup2(fileno(_get_blocking_handle()), $fd) // die 'dup(): ', $!;
+		
+		my ($blocking_reader, $blocking_writer) = _get_blocking_handles();
+		POSIX::dup2(fileno($blocking_writer), $fd) // die 'dup2(): ', $!;
+		
+		$io_handler->{blocking_reader} = $blocking_reader;
+		$io_handler->{blocking_writer} = $blocking_writer;
 		$io_handler->{orig_socket} = $socket;
 		Scalar::Util::weaken($io_handler->{orig_socket});
 		$socket = $tmp_socket;
@@ -255,6 +261,7 @@ sub _connect {
 			tied(*{$io_handler->{orig_socket}})->handshake_done(1);
 			POSIX::dup2(fileno($socket), fileno($io_handler->{orig_socket})) // die 'dup2(): ', $!;
 			close $socket;
+			_unblock_handles($io_handler->{blocking_reader}, $io_handler->{blocking_writer});
 		};
 		
 		my $on_error = sub {
