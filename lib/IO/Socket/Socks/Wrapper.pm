@@ -866,9 +866,7 @@ don't want to limit connection attempt time.
 
 =head1 BUGS
 
-Wrapping doesn't work with impure perl packages. WWW::Curl for example.
-
-No support for IPv6 for now. IO::Socket::IP may break wrapping.
+Wrapping doesn't work with XS based modules, where connection done inside C part. WWW::Curl for example.
 
 =head1 SEE ALSO
 
