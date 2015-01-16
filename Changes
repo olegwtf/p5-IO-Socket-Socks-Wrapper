@@ -1,5 +1,11 @@
 Revision history for Perl extension IO::Socket::Socks::Wrapper.
 
+0.13  Fri Jan 16 19:42:53 NOVT 2015
+      - IO::Socket::IP support added
+      - IPv6 support added
+      - Fix memory leak and incompatibility with epoll() for event loop integration
+      - Fix compatibility with non-blocking sockets
+
 0.12  Sun Dec 28 21:39:39 NOVT 2014
       - Remove Mojo::IOLoop tests and examples because Mojo doesn't support
         IO::Socket::INET since v5.59: rt#101166
