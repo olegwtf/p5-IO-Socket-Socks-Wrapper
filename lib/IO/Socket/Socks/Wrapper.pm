@@ -4,7 +4,6 @@ use strict;
 no warnings 'prototype';
 no warnings 'redefine';
 use Socket;
-use IO::Handle;
 use Errno;
 use base 'Exporter';
 
@@ -208,7 +207,7 @@ sub _connect {
 	if ($io_handler) {
 		$io_handler = $io_handler->();
 		require POSIX;
-		require Scalar::Util;
+		
 		
 		my $fd = fileno($socket);
 		my $tmp_fd = POSIX::dup($fd) // die 'dup(): ', $!;
@@ -246,28 +245,35 @@ sub _connect {
 	
 	if ($io_handler) {
 		my ($r_cb, $w_cb); 
+		my $done;
 		
 		tie *{$io_handler->{orig_socket}}, 'IO::Socket::Socks::Wrapper::Handle', $io_handler->{orig_socket}, sub {
-			$io_handler->{unset_read_watcher}->($socket);
-			$io_handler->{unset_write_watcher}->($socket);
-			
-			if ($io_handler->{destroy_io_watcher}) {
-				$io_handler->{destroy_io_watcher}->($socket);
+			unless ($done) {
+				$io_handler->{unset_read_watcher}->($socket);
+				$io_handler->{unset_write_watcher}->($socket);
+				
+				if ($io_handler->{destroy_io_watcher}) {
+					$io_handler->{destroy_io_watcher}->($socket);
+				}
+				
+				close $socket;
 			}
 			
-			close $socket;
+			# clean circular references
+			undef $r_cb;
+			undef $w_cb;
 		};
 		
 		my $on_finish = sub {
-			tied(*{$io_handler->{orig_socket}})->handshake_done(1);
-			untie *{$io_handler->{orig_socket}};
+			tied(*{$io_handler->{orig_socket}})->handshake_done($done = 1);
+			#untie *{$io_handler->{orig_socket}};
 			POSIX::dup2(fileno($socket), fileno($io_handler->{orig_socket})) // die 'dup2(): ', $!;
 			close $socket;
 			_unblock_handles($io_handler->{blocking_reader}, $io_handler->{blocking_writer});
 		};
 		
 		my $on_error = sub {
-			tied(*{$io_handler->{orig_socket}})->handshake_done(1);
+			tied(*{$io_handler->{orig_socket}})->handshake_done($done = 1);
 			shutdown($socket, 0);
 			POSIX::dup2(fileno($socket), fileno($io_handler->{orig_socket}))  // die 'dup2(): ', $!;
 			close $socket;
@@ -390,11 +396,7 @@ sub CLOSE {
 
 sub DESTROY {
 	my $self = shift;
-	
-	unless ($self->handshake_done) {
-		$self->handshake_done(1);
-		${*$self}{cleanup_cb}->();
-	}
+	${*$self}{cleanup_cb}->();
 }
 
 1;
