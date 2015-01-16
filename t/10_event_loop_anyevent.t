@@ -85,6 +85,12 @@ if ($@) {
 	plan skip_all => 'AnyEvent and AnyEvent::HTTP required for this test';
 }
 
+AnyEvent::detect();
+if (%EV:: && &EV::backend == &EV::BACKEND_KQUEUE) {
+	kill 15, $s_pid;
+	plan skip_all => 'kqueue support known to be broken';
+}
+
 my ($h_pid, $h_host, $h_port) = make_http_server();
 
 my $tick_cnt = 0;
