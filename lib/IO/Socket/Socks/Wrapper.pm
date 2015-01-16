@@ -635,7 +635,7 @@ description see above.
 
 =head4 Integration with event loops
 
-B<Note:> integration with event loop known to be broken if your event loop uses C<kqueue> (some BSD systems)
+B<Note:> integration with C<kqueue> based event loops known to be broken
 
 When you are using some event loop like AnyEvent or POE it is important to prevent any long blocking operations.
 By default IO::Socket::Socks::Wrapper blocks your program while it making connection and SOCKS handshake with a proxy.
