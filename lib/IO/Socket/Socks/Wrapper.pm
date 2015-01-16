@@ -3,7 +3,7 @@ package IO::Socket::Socks::Wrapper;
 use strict;
 no warnings 'prototype';
 no warnings 'redefine';
-use Socket;
+use Socket qw(:DEFAULT inet_ntop);
 use Errno;
 use base 'Exporter';
 
@@ -95,7 +95,7 @@ sub import {
 				_io_socket_connect_ref();
 				
 				*$symbol = sub {
-					local *IO::Socket::connect = sub {
+					local *IO::Socket::IP::connect = local *IO::Socket::connect = sub {
 						_connect(@_, $cfg, 1);
 					};
 					
@@ -117,7 +117,7 @@ sub import {
 				*connect = sub {
 					_io_socket_connect_ref();
 					
-					local(*IO::Socket::connect) = sub {
+					local *IO::Socket::IP::connect = local *IO::Socket::connect = sub {
 						_connect(@_, $cfg, 1);
 					};
 					
@@ -191,8 +191,14 @@ sub _connect {
 		return _io_socket_connect_ref->( $socket, $name );
 	}
 	
-	my ($port, $host) = sockaddr_in($name);
-	$host = inet_ntoa($host);
+	my ($port, $host);
+	if (($port, $host) = eval { unpack_sockaddr_in($name) }) {
+		$host = inet_ntoa($host);
+	}
+	else {
+		($port, $host) = unpack_sockaddr_in6($name);
+		$host = inet_ntop(AF_INET6, $host);
+	}
 	
 	# global overriding will not work with `use'
 	require IO::Socket::Socks;

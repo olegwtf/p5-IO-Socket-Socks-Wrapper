@@ -3,10 +3,12 @@
 use Test::More;
 BEGIN { use_ok('IO::Socket::Socks::Wrapper') };
 require 't/subs.pm';
+use IO::Socket::Socks;
 use strict;
 
+warn '$IO::Socket::Socks::SOCKET_CLASS = ', $IO::Socket::Socks::SOCKET_CLASS, "\n";
+
 $^W = 0;
-$Net::HTTP::SOCKET_CLASS = 'IO::Socket::INET';
 $ENV{http_proxy} = $ENV{HTTP_PROXY} = 
 $ENV{https_proxy} = $ENV{HTTPS_PROXY} = 
 $ENV{all_proxy} = $ENV{ALL_PROXY} = undef;

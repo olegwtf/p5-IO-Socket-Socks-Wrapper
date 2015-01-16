@@ -1,9 +1,10 @@
 package IO::Socket::Socks::Wrapped;
 
+no warnings 'redefine';
 use IO::Socket;
 use IO::Socket::Socks::Wrapper;
 
-our $VERSION = '0.11';
+our $VERSION = '0.12';
 our $AUTOLOAD;
 
 sub new {
@@ -16,7 +17,7 @@ sub AUTOLOAD {
 	
 	IO::Socket::Socks::Wrapper::_io_socket_connect_ref();
 	
-	local *IO::Socket::connect = sub {
+	local *IO::Socket::IP::connect = local *IO::Socket::connect = sub {
 		return IO::Socket::Socks::Wrapper::_connect(@_, $self->{cfg}, 1);
 	};
 	
