@@ -266,7 +266,6 @@ sub _connect {
 		
 		my $on_finish = sub {
 			tied(*{$io_handler->{orig_socket}})->handshake_done($done = 1);
-			#untie *{$io_handler->{orig_socket}};
 			POSIX::dup2(fileno($socket), fileno($io_handler->{orig_socket})) // die 'dup2(): ', $!;
 			close $socket;
 			_unblock_handles($io_handler->{blocking_reader}, $io_handler->{blocking_writer});
