@@ -7,7 +7,7 @@ use Socket qw(:DEFAULT inet_ntop);
 use Errno;
 use base 'Exporter';
 
-our $VERSION = '0.13';
+our $VERSION = '0.14';
 our @EXPORT_OK = ('connect', 'wrap_connection');
 
 # cache

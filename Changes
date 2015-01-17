@@ -1,5 +1,9 @@
 Revision history for Perl extension IO::Socket::Socks::Wrapper.
 
+0.14  Sat Jan 17 12:48:29 NOVT 2015
+      - Skip some tests if IO::Socket::IP with CORE::connect detected
+      - Add note about old IO::Socket::IP and global wrapping
+
 0.13  Fri Jan 16 19:42:53 NOVT 2015
       - IO::Socket::IP support added
       - IPv6 support added
