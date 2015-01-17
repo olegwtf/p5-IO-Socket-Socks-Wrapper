@@ -37,9 +37,13 @@ $ENV{all_proxy} = $ENV{ALL_PROXY} = undef;
 
 SKIP: {
 	skip "fork, windows, sux" if $^O =~ /MSWin/i;
-	eval { require LWP; require Net::FTP }
+	eval { require LWP; require Net::HTTP; require Net::FTP }
 		or skip "No LWP or Net::FTP found";
-		
+	
+	if (%IO::Socket::IP:: && $IO::Socket::IP::VERSION >= 0.08 && $IO::Socket::IP::VERSION < 0.35) {
+		skip "IO::Socket::IP with non overridable CORE::connect detected";
+	}
+	
 	my ($h_pid, $h_host, $h_port) = make_http_server();
 	my ($f_pid, $f_host, $f_port) = make_ftp_server();
 	

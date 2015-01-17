@@ -868,6 +868,10 @@ don't want to limit connection attempt time.
 
 Wrapping doesn't work with XS based modules, where connection done inside C part. WWW::Curl for example.
 
+Since C<IO::Socket::IP> version 0.08 till version 0.35 it used C<CORE::connect> internally, which can't be wrapped by global wrapping.
+And many modules nowadays uses IO::Socket::IP as socket class. So if you have problems with global wrapping make sure you have
+C<IO::Socket::IP> 0.35+
+
 =head1 SEE ALSO
 
 L<IO::Socket::Socks>, L<IO::Socket::Socks::Wrapped>
