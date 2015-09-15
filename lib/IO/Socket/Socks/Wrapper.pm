@@ -24,7 +24,7 @@ sub _io_socket_connect_ref {
 # fake handle to put under event loop while making socks handshake
 sub _get_blocking_handles {
 	pipe(my $blocking_reader, my $blocking_writer)
-		or die 'socketpair(): ', $!;
+		or die 'pipe(): ', $!;
 	
 	$blocking_writer->blocking(0);
 	$blocking_reader->blocking(0);
