@@ -4,7 +4,7 @@ no warnings 'redefine';
 use IO::Socket;
 use IO::Socket::Socks::Wrapper;
 
-our $VERSION = '0.15';
+our $VERSION = '0.16';
 our $AUTOLOAD;
 
 sub new {

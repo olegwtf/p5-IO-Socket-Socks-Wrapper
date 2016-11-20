@@ -1,5 +1,10 @@
 Revision history for Perl extension IO::Socket::Socks::Wrapper.
 
+0.16  Sun Nov 20 13:55:55 KRAT 2016
+      - Call CORE::connect on already connected sockets, which
+        fixes non-blocking usage of IO::Socket::IP
+      - Fix some tests
+
 0.15  Wed Oct 19 12:54:20 NOVT 2016
       - Fix checking of value returned by IO::Socket::Socks: rt#118430
 
