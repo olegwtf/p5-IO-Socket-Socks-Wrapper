@@ -248,7 +248,7 @@ sub _connect {
 		$socket->blocking(0);
 	}
 	
-	return unless $ok || ($io_handler && $IO::Socket::Socks::SOCKS_ERROR == &IO::Socket::Socks::SOCKS_WANT_WRITE);
+	return unless $ok;
 	bless $socket, $ref if $ref && !$io_handler; # XXX: should we unbless for GLOB?
 	
 	if ($io_handler) {
