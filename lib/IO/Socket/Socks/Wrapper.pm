@@ -179,10 +179,12 @@ sub wrap_connection {
 
 sub _connect {
 	my ($socket, $name, $cfg, $io_socket) = @_;
-	my $ref = ref($socket);
 	
-	if ($socket->isa('IO::Socket::Socks') || !$cfg) {
-		unless ($io_socket and ${*$socket}{'io_socket_timeout'}) {
+	my $ref = ref($socket);
+	my $connected;
+	
+	if ($socket->isa('IO::Socket::Socks') || !$cfg || ( $connected = defined getpeername($socket) )) {
+		unless (!$connected && $io_socket and ${*$socket}{'io_socket_timeout'}) {
 			return CORE::connect( $socket, $name );
 		}
 		
