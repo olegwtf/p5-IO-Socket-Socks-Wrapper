@@ -86,7 +86,7 @@ if ($@) {
 }
 
 AnyEvent::detect();
-if (%EV:: && &EV::backend == &EV::BACKEND_KQUEUE) {
+if ($EV::VERSION && &EV::backend == &EV::BACKEND_KQUEUE) {
 	kill 15, $s_pid;
 	plan skip_all => 'kqueue support known to be broken';
 }
