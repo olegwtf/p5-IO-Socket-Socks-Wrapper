@@ -237,19 +237,26 @@ sub _connect {
 		$need_nb = 1;
 	}
 	
-	my $ok = IO::Socket::Socks->new_from_socket(
-		$socket,
-		ConnectAddr  => $host,
-		ConnectPort  => $port,
-		%$cfg
-	);
-	
-	if ($need_nb) {
-		$socket->blocking(0);
-	}
+	my $ok;
+	{
+		# safe cleanup even if interrupted by SIGALRM
+		my $cleaner = IO::Socket::Socks::Wrapper::Cleaner->new(sub {
+			bless $socket, $ref if $ref && !$io_handler; # XXX: should we unbless for GLOB?
+		});
+		
+		$ok = IO::Socket::Socks->new_from_socket(
+			$socket,
+			ConnectAddr  => $host,
+			ConnectPort  => $port,
+			%$cfg
+		);
+		
+		if ($need_nb) {
+			$socket->blocking(0);
+		}
+	};
 	
 	return unless $ok;
-	bless $socket, $ref if $ref && !$io_handler; # XXX: should we unbless for GLOB?
 	
 	if ($io_handler) {
 		my ($r_cb, $w_cb); 
@@ -404,6 +411,19 @@ sub CLOSE {
 sub DESTROY {
 	my $self = shift;
 	${*$self}{cleanup_cb}->();
+}
+
+package IO::Socket::Socks::Wrapper::Cleaner;
+
+use strict;
+
+sub new {
+	my ($class, $on_destroy) = @_;
+	bless [ $on_destroy ], $class;
+}
+
+sub DESTROY {
+	shift->[0]->();
 }
 
 1;
